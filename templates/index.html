@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thana ພາສາເກົາຫຼີ | ຮຽນເກົາຫຼີອອນໄລນ໌</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-icon">🇰🇷</span> <span class="brand-text">Thana<small>ພາສາເກົາຫຼີ 한국어</small></span></div>
+  <div id="userbox" class="userbox hidden">
+    <span id="hello"></span>
+    <a id="adminLink" class="btn small hidden" href="/admin">⚙️ Admin</a>
+    <button id="btnLogout" class="btn small outline">ອອກຈາກລະບົບ</button>
+  </div>
+</header>
+
+<!-- ========== AUTH ========== -->
+<section id="viewAuth" class="card auth hidden">
+  <div class="tabs">
+    <button id="tabLogin" class="tab active">ເຂົ້າສູ່ລະບົບ</button>
+    <button id="tabRegister" class="tab">ລົງທະບຽນ</button>
+  </div>
+  <div id="formLogin">
+    <label>ຊື່ຜູ້ໃຊ້ <input id="liUser" autocomplete="username"></label>
+    <label>ລະຫັດຜ່ານ <input id="liPw" type="password" autocomplete="current-password"></label>
+    <button id="btnLogin" class="btn primary wide">ເຂົ້າສູ່ລະບົບ</button>
+    <p class="note">ບັນຊີໃໝ່ຕ້ອງໄດ້ຮັບການອະນຸມັດຈາກ admin ກ່ອນ ຈຶ່ງຈະເຂົ້າໃຊ້ໄດ້</p>
+  </div>
+  <div id="formRegister" class="hidden">
+    <label>ຊື່ ແລະ ນາມສະກຸນ <input id="rgName"></label>
+    <label>ຊື່ຜູ້ໃຊ້ (a-z, 0-9, _) <input id="rgUser" autocomplete="username"></label>
+    <label>ລະຫັດຜ່ານ (ຢ່າງໜ້ອຍ 4 ຕົວ) <input id="rgPw" type="password" autocomplete="new-password"></label>
+    <button id="btnRegister" class="btn primary wide">ລົງທະບຽນ</button>
+    <p class="note">ຫຼັງລົງທະບຽນແລ້ວ ກະລຸນາລໍຖ້າ admin ອະນຸມັດບັນຊີຂອງທ່ານ</p>
+  </div>
+  <p id="authMsg" class="msg"></p>
+</section>
+
+<!-- ========== DASHBOARD (lesson list) ========== -->
+<section id="viewDash" class="hidden">
+  <h2 class="pagetitle">ບົດຮຽນທັງໝົດ</h2>
+  <div id="lessonList" class="lessonlist"></div>
+</section>
+
+<!-- ========== LESSON DETAIL ========== -->
+<section id="viewLesson" class="hidden">
+  <button class="btn small outline backbtn" onclick="showDash()">← ກັບຄືນບົດຮຽນ</button>
+  <div class="card lessonhead">
+    <h2 id="lsTitleLo"></h2>
+    <p id="lsTitleKo" class="ko"></p>
+    <p id="lsDesc" class="muted"></p>
+  </div>
+
+  <div class="tabs wide" id="lessonTabs">
+    <button class="tab active" data-tab="video">🎬 ວິດີໂອ</button>
+    <button class="tab" data-tab="homework">📝 ວຽກບ້ານ</button>
+    <button class="tab" data-tab="quiz">❓ Quiz</button>
+    <button class="tab" data-tab="exam">🏆 ສອບເສັງຍ່ອຍ</button>
+  </div>
+
+  <div id="paneVideo" class="pane card">
+    <div id="videoList"></div>
+  </div>
+
+  <div id="paneHomework" class="pane card hidden">
+    <div id="homeworkForm"></div>
+    <button id="btnSubmitHomework" class="btn primary wide">ສົ່ງວຽກບ້ານ</button>
+    <p id="homeworkMsg" class="msg"></p>
+  </div>
+
+  <div id="paneQuiz" class="pane card hidden">
+    <div id="quizBest" class="besttag"></div>
+    <div id="quizForm"></div>
+    <button id="btnSubmitQuiz" class="btn primary wide">ສົ່ງຄໍາຕອບ</button>
+    <div id="quizResult" class="examresult hidden"></div>
+  </div>
+
+  <div id="paneExam" class="pane card hidden">
+    <p class="note">ຕ້ອງໄດ້ຄະແນນຢ່າງໜ້ອຍ <b>70%</b> ຈຶ່ງຈະຜ່ານ ແລະ ປົດລ໋ອກບົດຕໍ່ໄປອັດຕະໂນມັດ</p>
+    <div id="examBest" class="besttag"></div>
+    <div id="examForm"></div>
+    <button id="btnSubmitExam" class="btn primary wide">ສົ່ງສອບເສັງ</button>
+    <div id="examResult" class="examresult hidden"></div>
+  </div>
+</section>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

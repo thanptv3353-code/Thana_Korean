@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin | Thana ພາສາເກົາຫຼີ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-icon">⚙️</span> <span class="brand-text">Thana Admin<small>ຈັດການບົດຮຽນ</small></span></div>
+  <div class="userbox">
+    <span id="hello"></span>
+    <a class="btn small outline" href="/">🏠 ໜ້າຫຼັກ</a>
+    <a class="btn small outline" href="/api/admin/backup">⬇️ ສຳຮອງຂໍ້ມູນ</a>
+    <button id="btnLogout" class="btn small outline">ອອກຈາກລະບົບ</button>
+  </div>
+</header>
+
+<section id="viewAdminAuth" class="card auth hidden">
+  <h2 class="pagetitle" style="margin-top:0">ເຂົ້າສູ່ລະບົບ Admin</h2>
+  <label>ຊື່ຜູ້ໃຊ້ <input id="liUser"></label>
+  <label>ລະຫັດຜ່ານ <input id="liPw" type="password"></label>
+  <button id="btnLogin" class="btn primary wide">ເຂົ້າສູ່ລະບົບ</button>
+  <p id="authMsg" class="msg"></p>
+</section>
+
+<section id="viewAdmin" class="hidden">
+  <div class="tabs wide" id="adminTabs">
+    <button class="tab active" data-tab="students">👤 ນັກຮຽນ</button>
+    <button class="tab" data-tab="lessons">📚 ບົດຮຽນ</button>
+    <button class="tab" data-tab="progress">📊 ຄວາມຄືບໜ້າ</button>
+  </div>
+
+  <!-- students -->
+  <div id="paneStudents" class="pane card">
+    <h3>ລໍຖ້າອະນຸມັດ / ນັກຮຽນທັງໝົດ</h3>
+    <table class="admintable"><thead><tr>
+      <th>ຊື່</th><th>ຊື່ຜູ້ໃຊ້</th><th>ສະຖານະ</th><th>ຈັດການ</th>
+    </tr></thead><tbody id="studentRows"></tbody></table>
+  </div>
+
+  <!-- lessons -->
+  <div id="paneLessons" class="pane card hidden">
+    <h3>ເພີ່ມບົດຮຽນໃໝ່</h3>
+    <label>ຊື່ບົດຮຽນ (ລາວ) <input id="newLessonLo"></label>
+    <label>ຊື່ບົດຮຽນ (ເກົາຫຼີ) <input id="newLessonKo"></label>
+    <label>ຄໍາອະທິບາຍ <input id="newLessonDesc"></label>
+    <button id="btnAddLesson" class="btn primary">➕ ເພີ່ມບົດຮຽນ</button>
+    <hr>
+    <div id="lessonAdminList"></div>
+  </div>
+
+  <!-- progress -->
+  <div id="paneProgress" class="pane card hidden">
+    <div id="progressTableWrap"></div>
+  </div>
+</section>
+
+<!-- ============ lesson edit modal ============ -->
+<div id="lessonModal" class="modal hidden">
+  <div class="modalbox">
+    <button class="btn small outline modalclose" id="btnCloseModal">✕ ປິດ</button>
+    <h2 id="modalTitle"></h2>
+
+    <div class="tabs" id="modalTabs">
+      <button class="tab active" data-mtab="videos">🎬 ວິດີໂອ</button>
+      <button class="tab" data-mtab="homework">📝 ວຽກບ້ານ</button>
+      <button class="tab" data-mtab="quiz">❓ Quiz</button>
+      <button class="tab" data-mtab="exam">🏆 ສອບເສັງ</button>
+    </div>
+
+    <div id="mpVideos" class="mpane">
+      <form id="videoUploadForm">
+        <label>ຊື່ວິດີໂອ <input id="videoTitle" required></label>
+        <label>ລິ້ງ YouTube (ຕັ້ງເປັນ "ບໍ່ລົງລາຍການ / Unlisted")
+          <input id="videoUrl" placeholder="https://youtu.be/xxxxxxxxxxx" required></label>
+        <button type="submit" class="btn primary">➕ ເພີ່ມວິດີໂອ</button>
+      </form>
+      <p class="note">ອັບໂຫຼດວິດີໂອຂຶ້ນ YouTube ກ່ອນ (ຕັ້ງຄ່າເປັນ Unlisted ເພື່ອບໍ່ໃຫ້ຄົນອື່ນຄົ້ນຫາເຫັນ) ແລ້ວກັອບປີ້ລິ້ງມາວາງ</p>
+      <div id="videoAdminList" class="modallist"></div>
+    </div>
+
+    <div id="mpHomework" class="mpane hidden">
+      <div class="qeditor">
+        <input id="hwQuestion" placeholder="ຄໍາຖາມວຽກບ້ານ (ຕອບແບບຂຽນ)">
+        <button id="btnAddHw" class="btn primary">➕</button>
+      </div>
+      <div id="hwAdminList" class="modallist"></div>
+    </div>
+
+    <div id="mpQuiz" class="mpane hidden">
+      <div class="qeditor choiceeditor">
+        <input id="quizQuestion" placeholder="ຄໍາຖາມ">
+        <input id="quizOpt0" placeholder="ຕົວເລືອກ 1">
+        <input id="quizOpt1" placeholder="ຕົວເລືອກ 2">
+        <input id="quizOpt2" placeholder="ຕົວເລືອກ 3 (ບໍ່ບັງຄັບ)">
+        <input id="quizOpt3" placeholder="ຕົວເລືອກ 4 (ບໍ່ບັງຄັບ)">
+        <label>ຄໍາຕອບທີ່ຖືກ (ໝາຍເລກ 1-4)
+          <input id="quizAnswer" type="number" min="1" max="4" value="1"></label>
+        <button id="btnAddQuiz" class="btn primary">➕ ເພີ່ມຄໍາຖາມ</button>
+      </div>
+      <div id="quizAdminList" class="modallist"></div>
+    </div>
+
+    <div id="mpExam" class="mpane hidden">
+      <div class="qeditor choiceeditor">
+        <input id="examQuestion" placeholder="ຄໍາຖາມ">
+        <input id="examOpt0" placeholder="ຕົວເລືອກ 1">
+        <input id="examOpt1" placeholder="ຕົວເລືອກ 2">
+        <input id="examOpt2" placeholder="ຕົວເລືອກ 3 (ບໍ່ບັງຄັບ)">
+        <input id="examOpt3" placeholder="ຕົວເລືອກ 4 (ບໍ່ບັງຄັບ)">
+        <label>ຄໍາຕອບທີ່ຖືກ (ໝາຍເລກ 1-4)
+          <input id="examAnswer" type="number" min="1" max="4" value="1"></label>
+        <button id="btnAddExam" class="btn primary">➕ ເພີ່ມຄໍາຖາມ</button>
+      </div>
+      <div id="examAdminList" class="modallist"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/admin.js"></script>
+</body>
+</html>

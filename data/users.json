@@ -1,0 +1,17 @@
+{
+ "admin": {
+  "username": "admin",
+  "name": "Admin",
+  "role": "admin",
+  "status": "approved",
+  "pw": "670b34796079837cc011c5f6b1642699$e48b51ff4d4c45d3b9079f04eaa9ada74f334ceb25e8d93c80111c4641c8f07f"
+ },
+ "student1": {
+  "username": "student1",
+  "name": "ນັກຮຽນທົດລອງ",
+  "role": "student",
+  "status": "approved",
+  "pw": "35d3bbf4fc087badf2376bb3ca148a32$89bf946b7892a968babcf5b0f2e26f7219afc18bdf092b488c06c08a627fd9bf",
+  "created_at": 1783920946.8119738
+ }
+}

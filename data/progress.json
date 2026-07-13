@@ -1,0 +1,46 @@
+{
+ "student1": {
+  "l_169d780bbc": {
+   "homework_done": true,
+   "homework_answers": {
+    "q_2b6a90f66c": "ສະບາຍດີ"
+   },
+   "quiz_best": 100,
+   "quiz_attempts": 1,
+   "exam_best": 100,
+   "exam_attempts": 2,
+   "exam_passed": true,
+   "completed_at": 1783921121.3729029
+  },
+  "l_b96ea0577f": {
+   "homework_done": false,
+   "homework_answers": {},
+   "quiz_best": 0,
+   "quiz_attempts": 0,
+   "exam_best": 100,
+   "exam_attempts": 1,
+   "exam_passed": true,
+   "completed_at": 1783923072.679899
+  },
+  "l_93b4bcf1e8": {
+   "homework_done": false,
+   "homework_answers": {},
+   "quiz_best": 0,
+   "quiz_attempts": 0,
+   "exam_best": 100,
+   "exam_attempts": 1,
+   "exam_passed": true,
+   "completed_at": 1783923128.824865
+  },
+  "l_9f59e5cc4f": {
+   "homework_done": false,
+   "homework_answers": {},
+   "quiz_best": 100,
+   "quiz_attempts": 2,
+   "exam_best": 100,
+   "exam_attempts": 1,
+   "exam_passed": true,
+   "completed_at": 1783923229.389148
+  }
+ }
+}
