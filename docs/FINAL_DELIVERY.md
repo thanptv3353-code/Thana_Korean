@@ -116,5 +116,7 @@ Staging preparation: user selected Render Free for a separate disposable demo.
 The Blueprint uses no disk and disables paid providers; reviewer protection and
 a bilingual data-reset notice are implemented. 52 tests pass. Render reports Live for commit 628f0d4, with health 200 and reviewer gate 401.
 The user confirms /health returns status: ok on mobile data. Direct HTTPS from
-this machine still fails; authenticated online review remains pending. See STAGING_RENDER.md for URL and private login instructions.
+this machine still fails, but the user subsequently confirms both reviewer and
+admin sign-in work. Free staging deployment and access acceptance are complete.
+See STAGING_RENDER.md for evidence and private login instructions.
 No production service was modified.
