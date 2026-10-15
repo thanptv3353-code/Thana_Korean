@@ -115,6 +115,6 @@ pending. See INTEGRATIONS.md.
 Staging preparation: user selected Render Free for a separate disposable demo.
 The Blueprint uses no disk and disables paid providers; reviewer protection and
 a bilingual data-reset notice are implemented. 52 tests pass. Render reports Live for commit 628f0d4, with health 200 and reviewer gate 401.
-Direct HTTPS access from this machine fails at TLS; authenticated online review
-remains pending. See STAGING_RENDER.md for URL and private login instructions.
+The user confirms /health returns status: ok on mobile data. Direct HTTPS from
+this machine still fails; authenticated online review remains pending. See STAGING_RENDER.md for URL and private login instructions.
 No production service was modified.
