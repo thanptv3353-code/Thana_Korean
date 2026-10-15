@@ -68,3 +68,13 @@ GitHub API uploaded sanitized blobs/tree and created a separate commit/branch;
 its tree SHA equals the tested local tree. Local source commits have different
 commit SHAs; main remains at the original commit. Documentation-only revisions
 may follow on the staging branch; application auto deploy is off.
+
+## Connectivity recheck
+
+A subsequent check still shows the staging service Live in Render. From this
+machine, both the original thana-korean.onrender.com and the new staging host
+resolve to 216.24.57.16 / 216.24.57.18 but HTTPS requests time out. Earlier attempts
+also reported TLS connection closed. This suggests a shared connectivity problem,
+not proof of an app defect or a working external route. No network/security
+settings were changed. A mobile-data /health check is pending from the user;
+reviewer sign-in and physical-device acceptance cannot yet be claimed.
