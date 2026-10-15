@@ -1,5 +1,6 @@
 """Timed reading mock exams with server deadlines and saved-answer snapshots."""
 import json, random, secrets
+from eps_content import public_question, explanations
 from time import time as now
 from flask import jsonify, request, render_template
 
@@ -20,7 +21,7 @@ def install_mock(app, legacy, db, owner, questions):
         return result
     def result(row):
         qs=json.loads(row['questions']);answers=json.loads(row['answers'])
-        detail=[{'id':q['id'],'category':q['category'],'answer':q['answer'],'given':answers.get(str(q['id'])),'correct':answers.get(str(q['id']))==q['answer'],'verified':q.get('verified',False)} for q in qs]
+        detail=[{'id':q['id'],'category':q['category'],'answer':q['answer'],'given':answers.get(str(q['id'])),'correct':answers.get(str(q['id']))==q['answer'],'verified':q.get('verified',False),**explanations(q),'question':public_question(q)} for q in qs]
         categories={}
         for q in detail:
             group=categories.setdefault(q['category'],{'correct':0,'total':0});group['correct']+=int(q['correct']);group['total']+=1
@@ -68,7 +69,7 @@ def install_mock(app, legacy, db, owner, questions):
             c.execute('BEGIN IMMEDIATE');row=owned(c,aid)
             if not row:return jsonify(error='Not found'),404
             if row['finished'] is not None or now()>=row['deadline']:return jsonify(finished=True,result=finalize(c,row))
-        return jsonify(id=aid,finished=False,remaining=max(0,row['deadline']-now()),answers=json.loads(row['answers']),questions=[{k:v for k,v in q.items() if k not in ('answer','source')} for q in json.loads(row['questions'])])
+        return jsonify(id=aid,finished=False,remaining=max(0,row['deadline']-now()),answers=json.loads(row['answers']),questions=[public_question(q) for q in json.loads(row['questions'])])
     @app.post('/api/platform/mock/<aid>/answer')
     def mock_save_answer(aid):
         if not owner():return jsonify(error='Login required'),401

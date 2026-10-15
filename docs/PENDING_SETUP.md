@@ -13,8 +13,8 @@ These items remain pending; they are not silently replaced by mock behavior.
    setup described in INTEGRATIONS.md. They are independent from AI voice TTS.
 3. Content: review imported EPS answers/translations, extend the Lao curriculum,
    and review each synthetic voice before publication. AI audio is labelled as AI.
-4. Staging: the user-selected Render Free demo is deployed; verify public HTTPS
-   and authenticated review from another network (STAGING_RENDER.md). Free data
+4. Staging: the user-selected Render Free demo is deployed; the user confirmed
+   public health and both reviewer/admin access (STAGING_RENDER.md). Free data
    can reset. Before production cutover, decide durable storage, back up actual
    production data, dry-run migration and obtain approval for the cutover.
 5. Physical-device testing: Android/iPhone microphone, playback and PWA install.
@@ -22,3 +22,5 @@ These items remain pending; they are not silently replaced by mock behavior.
 
 Run `python3 scripts/verify_release.py` for the clean local source-package check.
 Source ZIP excludes private databases, credentials, generated audio and receipts.
+
+See PLAN_STATUS.md for code/content requirements still open in the original vision.

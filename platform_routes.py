@@ -1,5 +1,6 @@
 """Additive platform routes; legacy lessons and account records remain intact."""
 import json, os, secrets, sqlite3, time
+from eps_content import DIFFICULTIES, public_question, explanations
 from contextlib import contextmanager
 from flask import jsonify, request, session, render_template
 
@@ -44,7 +45,8 @@ def install(app, legacy):
     @app.post('/api/platform/practice')
     def start():
         if not owner(): return jsonify(error='ກະລຸນາເຂົ້າລະບົບ / 로그인해 주세요'),401
-        d=request.get_json(silent=True) or {}; cat=d.get('category')
+        d=request.get_json(silent=True) or {}; cat=d.get('category'); difficulty=d.get('difficulty','')
+        if difficulty not in ('', *DIFFICULTIES):return jsonify(error='Invalid difficulty'),400
         if cat not in {q['category'] for q in questions}: return jsonify(error='Invalid category'),400
         # Keep passage groups together; practice has no official exam timer.
         pool=[q for q in questions if q['category']==cat]
@@ -52,11 +54,14 @@ def install(app, legacy):
         if cat=='reading':
             groups={}
             for q in pool: groups.setdefault(q['source'].split('-')[0],[]).append(q)
-            chunks=list(groups.values()); random.shuffle(chunks); chosen=[]
+            chunks=[g for g in groups.values() if not difficulty or all(q.get('difficulty')==difficulty for q in g)]; random.shuffle(chunks); chosen=[]
             for chunk in chunks:
                 if len(chosen)+len(chunk)>15 and chosen: break
                 chosen.extend(chunk)
-        else: chosen=random.sample(pool,min(10,len(pool)))
+        else:
+            pool=[q for q in pool if not difficulty or q.get('difficulty')==difficulty]
+            chosen=random.sample(pool,min(10,len(pool)))
+        if not chosen:return jsonify(error='ບໍ່ມີຂໍ້ສອບໃນລະດັບນີ້ / 해당 난이도 문항이 없습니다'),409
         with db() as c:
             reviews={r['qid']:r for r in c.execute('SELECT * FROM reviews')}
         chosen=[dict(q) for q in chosen]
@@ -67,7 +72,7 @@ def install(app, legacy):
         with db() as c:
             c.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?)',(aid,owner(),cat,json.dumps([q['id'] for q in chosen]),None,time.time(),None,None))
             c.execute('INSERT INTO snapshots VALUES (?,?)',(aid,json.dumps(chosen)))
-        return jsonify(id=aid,questions=[{k:v for k,v in q.items() if k not in ('answer','source')} for q in chosen])
+        return jsonify(id=aid,questions=[public_question(q) for q in chosen])
     @app.post('/api/platform/practice/<aid>/retry')
     def retry_incorrect(aid):
         if not owner():return jsonify(error='Login required'),401
@@ -86,7 +91,7 @@ def install(app, legacy):
             retry=secrets.token_urlsafe(24)
             c.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?)',(retry,owner(),row['category'],json.dumps([q['id'] for q in chosen]),None,time.time(),None,None))
             c.execute('INSERT INTO snapshots VALUES (?,?)',(retry,json.dumps(chosen)))
-        return jsonify(id=retry,questions=[{k:v for k,v in q.items() if k not in ('answer','source')} for q in chosen])
+        return jsonify(id=retry,questions=[public_question(q) for q in chosen])
     @app.post('/api/platform/practice/<aid>')
     def finish(aid):
         if not owner(): return jsonify(error='Login required'),401
@@ -102,10 +107,24 @@ def install(app, legacy):
             if set(answers)-{str(i) for i in ids}: return jsonify(error='Unexpected question'),400
             if any(type(v)!=int or not 1<=v<=len(bank[int(k)]['choices_ko']) for k,v in answers.items()): return jsonify(error='Invalid choice'),400
             if row['finished']: answers=json.loads(row['answers'])
-            detail=[{'id':i,'answer':bank[i]['answer'],'given':answers.get(str(i)),'correct':answers.get(str(i))==bank[i]['answer'],'verified':bank[i].get('verified',False)} for i in ids]
+            detail=[{'id':i,'answer':bank[i]['answer'],'given':answers.get(str(i)),'correct':answers.get(str(i))==bank[i]['answer'],'verified':bank[i].get('verified',False),**explanations(bank[i])} for i in ids]
             score=sum(q['correct'] for q in detail)
             if not row['finished']: c.execute('UPDATE attempts SET answers=?,finished=?,score=? WHERE id=?',(json.dumps(answers),time.time(),score,aid))
         return jsonify(score=score,total=len(ids),detail=detail)
+    @app.get('/api/platform/practice/<aid>/result')
+    def practice_result(aid):
+        if not owner():return jsonify(error='Login required'),401
+        with db() as c:
+            row=c.execute('SELECT * FROM attempts WHERE id=? AND owner=?',(aid,owner())).fetchone()
+            if not row:return jsonify(error='Not found'),404
+            if row['finished'] is None:return jsonify(error='Finish the attempt first'),409
+            snapshot=c.execute('SELECT questions FROM snapshots WHERE attempt=?',(aid,)).fetchone()
+        if not snapshot:return jsonify(error='Original question snapshot unavailable'),409
+        qs=json.loads(snapshot['questions']);answers=json.loads(row['answers'])
+        detail=[{'id':q['id'],'answer':q['answer'],'given':answers.get(str(q['id'])),'correct':answers.get(str(q['id']))==q['answer'],'verified':q.get('verified',False),**explanations(q)} for q in qs]
+        response=jsonify(score=row['score'],total=len(qs),detail=detail,questions=[public_question(q) for q in qs])
+        response.headers['Cache-Control']='no-store'
+        return response
     @app.get('/api/platform/history')
     def history():
         if not owner(): return jsonify(error='Login required'),401
@@ -167,3 +186,6 @@ def install(app, legacy):
     install_speech(app, legacy, db, owner)
     from tts_routes import install_tts
     install_tts(app, legacy, db, owner)
+
+    from readiness_routes import install_readiness
+    install_readiness(app, legacy, db)

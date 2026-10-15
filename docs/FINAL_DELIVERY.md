@@ -28,7 +28,7 @@ production/domain and payments were not changed.
 
 ## Validation
 
-- 52 isolated unit/integration tests pass (Flask, storage, grading, access,
+- 59 isolated unit/integration tests pass (Flask, storage, grading, access,
   deadline, recovery, payments, upload visibility, import, providers with mocked
   HTTP responses, restore validation and traversal rejection).
 - Browser QA used a separate server with a synthetic administrator and synthetic
@@ -120,3 +120,46 @@ this machine still fails, but the user subsequently confirms both reviewer and
 admin sign-in work. Free staging deployment and access acceptance are complete.
 See STAGING_RENDER.md for evidence and private login instructions.
 No production service was modified.
+
+## Content review queue (local, after staging release)
+
+Added /content-readiness for approved administrators and teachers, linked from
+management. Lists active EPS questions with unverified effective review state or
+missing Lao text counterparts, and published vocabulary missing Korean/Lao audio
+links. Includes counts, search, type filtering, 30-item pages and direct editor
+links selecting the exact item. Review overrides take precedence; archived EPS
+and draft vocabulary are excluded. It checks presence, not translation quality,
+remote audio availability or pronunciation. It never edits content automatically.
+
+54 tests pass, including role denial, review precedence, exclusions, missing
+translations/audio and pagination. JavaScript syntax checks pass. Isolated browser
+QA with a synthetic teacher verified report rendering, search, empty state and
+EPS editor deep link. This addition is local; the Render build is still 628f0d4.
+
+## EPS explanations and dictionary metadata (local)
+
+Teachers can assign EPS difficulty and Korean/Lao explanations. Practice filters
+by assigned level; reading passage groups are retained whole. Explanations and
+answer keys are withheld until grading, including retry and timed-mock payloads.
+Completed practice has an owner-only, no-store history review endpoint. Original
+snapshot explanations survive later bank edits; mock results also retain the
+original question and explanations. History offers review for practice and mocks.
+
+Vocabulary authoring now supports part of speech and library images, with a
+picker and image preview; the dictionary displays both. Optional CSV columns
+part_of_speech/image_url survive preview/import as drafts. A separate additive
+metadata table preserves existing vocabulary IDs and the old nine-column table.
+A public word or active EPS item requires a published image asset. Frontend EPS
+image attributes are escaped. Admin-only EPS review navigation is hidden for
+teachers; their bank editor remains available.
+
+59 isolated tests pass, covering snapshot privacy, effective difficulty, complete
+passage grouping, result ownership, image publication guards, metadata preservation
+for old clients and CSV draft import. Browser used synthetic data on isolated8036:
+author saved metadata → dictionary displayed/decoded image and part of speech;
+advanced-only practice selected the three synthetic questions, grading revealed
+bilingual explanations, and history reopened the original explanations. Question
+editor difficulty/explanation loading and saving were verified.
+
+The extended vision and unfinished work are tracked in PLAN_STATUS.md. This
+batch is local and is not represented as already deployed on Render.

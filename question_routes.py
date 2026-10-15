@@ -1,5 +1,6 @@
 """Editable EPS bank layered over the preserved imported source."""
 import json
+from eps_content import DIFFICULTIES
 from flask import jsonify,request,render_template,redirect
 
 def install_questions(app,legacy,db,questions,by_id):
@@ -18,6 +19,8 @@ def install_questions(app,legacy,db,questions,by_id):
         for k in ('choices_ko','choices_lo'):
             if not isinstance(d.get(k),list) or not 2<=len(d[k])<=6 or not all(isinstance(v,str) and len(v)<=2000 for v in d[k]):return False
         if len(d['choices_ko'])!=len(d['choices_lo']) or type(d.get('answer'))!=int or not 1<=d['answer']<=len(d['choices_ko']) or type(d.get('verified'))!=bool:return False
+        if d.get('difficulty', '') not in ('', *DIFFICULTIES):return False
+        if any(not isinstance(d.get(k,''),str) or len(d.get(k,''))>10000 for k in ('explanation_ko','explanation_lo')):return False
         image=d.get('image','')
         if image and not (image.startswith('/media/library/') or legacy['re'].fullmatch(r'[A-Za-z0-9_-]+\.png',image)):return False
         return bool(d.get('stem_ko') or image or d.get('passage_ko'))
@@ -44,6 +47,10 @@ def install_questions(app,legacy,db,questions,by_id):
         if not validate(d) or type(active)!=bool:return jsonify(error='Check fields, choices and answer'),400
         with db() as c:
             c.execute('BEGIN IMMEDIATE')
+            image=d.get('image','')
+            if image.startswith('/media/library/'):
+                asset=c.execute('SELECT kind,published FROM media_assets WHERE filename=?',(image[len('/media/library/'):],)).fetchone()
+                if not asset or asset['kind']!='image' or (active and not asset['published']):return jsonify(error='Publish a valid library image before activating the question'),400
             if qid is None:qid=c.execute('SELECT COALESCE(MAX(id),0)+1 FROM eps_bank').fetchone()[0]
             elif type(qid)!=int or not c.execute('SELECT 1 FROM eps_bank WHERE id=?',(qid,)).fetchone():return jsonify(error='Not found'),404
             d['id']=qid

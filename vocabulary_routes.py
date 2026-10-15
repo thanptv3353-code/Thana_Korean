@@ -7,6 +7,17 @@ def install_vocabulary(app,legacy,db,owner):
     app.config['MAX_CONTENT_LENGTH']=12*1024*1024
     with db() as c:
         c.execute('CREATE TABLE IF NOT EXISTS vocabulary (id TEXT PRIMARY KEY, ko TEXT, lo TEXT, category TEXT, example_ko TEXT, example_lo TEXT, audio_ko TEXT, audio_lo TEXT, published INTEGER, UNIQUE(ko,lo))')
+    with db() as c:
+        c.execute('CREATE TABLE IF NOT EXISTS vocabulary_details (word TEXT PRIMARY KEY, part_of_speech TEXT, image_url TEXT)')
+    def details(c, wid):
+        row=c.execute('SELECT part_of_speech,image_url FROM vocabulary_details WHERE word=?',(wid,)).fetchone()
+        return dict(row) if row else {'part_of_speech':'','image_url':''}
+    def valid_details(c, part, image, published):
+        if not isinstance(part,str) or len(part)>80 or not isinstance(image,str) or len(image)>500:return False
+        if not image:return True
+        if not image.startswith('/media/library/'):return False
+        asset=c.execute('SELECT kind,published FROM media_assets WHERE filename=?',(image[len('/media/library/'):],)).fetchone()
+        return bool(asset and asset['kind']=='image' and (not published or asset['published']))
     def normalize(d):
         if not isinstance(d,dict):return None
         fields={k:unicodedata.normalize('NFC',d.get(k,'').strip()) for k in ('ko','lo','category','example_ko','example_lo') if isinstance(d.get(k,''),str)}
@@ -28,25 +39,33 @@ def install_vocabulary(app,legacy,db,owner):
         saved_filter=' AND EXISTS(SELECT 1 FROM saved_words s WHERE s.word=vocabulary.id AND s.owner=?)' if scope=='saved' else ''
         params=(term,term)+((owner(),) if scope=='saved' else ())
         with db() as c:rows=c.execute('SELECT * FROM vocabulary WHERE published=1 AND (instr(lower(ko),lower(?))>0 OR instr(lo,?)>0)'+saved_filter+' ORDER BY ko LIMIT 100',params).fetchall()
-        return jsonify(words=[dict(r) for r in rows])
+        with db() as c:result=[{**dict(r),**details(c,r['id'])} for r in rows]
+        return jsonify(words=result)
     @app.get('/api/platform/admin/vocabulary')
     @legacy['content_required']
     def admin_words():
         with db() as c:rows=c.execute('SELECT * FROM vocabulary ORDER BY ko').fetchall()
-        return jsonify(words=[dict(r) for r in rows])
+        with db() as c:result=[{**dict(r),**details(c,r['id'])} for r in rows]
+        return jsonify(words=result)
     @app.post('/api/platform/admin/vocabulary')
     @legacy['content_required']
     def save_word():
         d=request.get_json(silent=True) or {};fields=normalize(d);published=d.get('published',False);wid=d.get('id')
         if not fields or type(published)!=bool:return jsonify(error='Invalid vocabulary'),400
+        if wid is not None and (not isinstance(wid,str) or not wid or len(wid)>100):return jsonify(error='Invalid word id'),400
         values=[fields[k] for k in ('ko','lo','category','example_ko','example_lo')]
         try:
             with db() as c:
+                c.execute('BEGIN IMMEDIATE')
+                prior=details(c,wid) if wid else {'part_of_speech':'','image_url':''}
+                part=d.get('part_of_speech',prior['part_of_speech']);image=d.get('image_url',prior['image_url'])
+                if not valid_details(c,part,image,published):return jsonify(error='Use a valid image from the media library; publish the image before the word'),400
                 if wid:
                     if not c.execute('SELECT id FROM vocabulary WHERE id=?',(wid,)).fetchone():return jsonify(error='Not found'),404
                     c.execute('UPDATE vocabulary SET ko=?,lo=?,category=?,example_ko=?,example_lo=?,published=? WHERE id=?',(*values,int(published),wid))
                 else:
                     wid=secrets.token_urlsafe(12);c.execute('INSERT INTO vocabulary VALUES (?,?,?,?,?,?,?,?,?)',(wid,*values,'','',int(published)))
+                c.execute('INSERT OR REPLACE INTO vocabulary_details VALUES (?,?,?)',(wid,part.strip(),image))
         except sqlite3.IntegrityError:return jsonify(error='ມີຄຳສັບນີ້ແລ້ວ / 중복 단어'),409
         return jsonify(id=wid)
     @app.post('/api/platform/admin/vocabulary/import')
@@ -64,12 +83,18 @@ def install_vocabulary(app,legacy,db,owner):
                 if line>1001:return jsonify(error='Maximum 1000 rows'),400
                 word=normalize(row)
                 if not word:errors.append({'line':line,'error':'Missing/invalid ko or lo'});continue
+                part=row.get('part_of_speech','');image=row.get('image_url','')
+                if not valid_details(c,part,image,False):errors.append({'line':line,'error':'Invalid part_of_speech or library image'});continue
+                word.update(part_of_speech=part.strip(),image_url=image)
                 key=(word['ko'],word['lo'])
                 if key in seen or key in existing:duplicates.append(line);continue
                 seen.add(key);incoming.append(word)
             if commit and errors:return jsonify(error='Fix all invalid rows before import',errors=errors),400
             if commit:
-                for w in incoming:c.execute('INSERT INTO vocabulary VALUES (?,?,?,?,?,?,?,?,?)',(secrets.token_urlsafe(12),w['ko'],w['lo'],w['category'],w['example_ko'],w['example_lo'],'','',0))
+                for w in incoming:
+                    wid=secrets.token_urlsafe(12)
+                    c.execute('INSERT INTO vocabulary VALUES (?,?,?,?,?,?,?,?,?)',(wid,w['ko'],w['lo'],w['category'],w['example_ko'],w['example_lo'],'','',0))
+                    c.execute('INSERT INTO vocabulary_details VALUES (?,?,?)',(wid,w['part_of_speech'],w['image_url']))
         return jsonify(added=len(incoming) if commit else 0,ready=len(incoming),duplicates=duplicates,errors=errors,preview=incoming[:20],draft=True)
     @app.post('/api/platform/admin/vocabulary/<wid>/audio/<language>')
     @legacy['content_required']
