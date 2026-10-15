@@ -58,11 +58,14 @@ integration, refunds and accounting reconciliation are not implemented.
 
 ## Hosting
 
-Use durable storage for both SQLite files, media and receipts. Set THANA_ENV to
-production only with HTTPS termination, and change any legacy default admin
-password first. No deployment, domain change, subscription purchase, GitHub push
-or App Store publication was performed. The existing Render configuration is
-not a durable-storage deployment plan and must be reviewed before use.
+A separate Render Free staging demo is deployed at
+https://thana-korean-stage-demo.onrender.com/ with synthetic data, reviewer
+access and paid providers disabled. Free storage is disposable; this does not
+satisfy durable production storage requirements. See STAGING_RENDER.md for
+current deployment evidence, private access instructions and outstanding HTTPS
+verification. Production service and domain were not changed; no paid plan
+was purchased. Before production migration, back up actual data and validate
+restore/migration on durable storage with HTTPS and modern admin passwords.
 
 
 ## AI voice authoring (Azure TTS)
