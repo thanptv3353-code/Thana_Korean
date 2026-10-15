@@ -26,9 +26,10 @@ app administrator password, distinct from the reviewer gate. Free has no Shell.
 - [x] Created NEW Free service srv-db89708m7kps73di7p5g with custom Blueprint.
   Blueprint exs-db896u1srm7s73drqtcg, name thana-korean-free-staging.
 - [x] Render deployment logs confirm /health 200 and / 401.
-- [ ] Direct public HTTPS verification: this machine/browser reports connection
-  closed during TLS, while Render health checks remain successful. No certificate
-  verification was bypassed. Public access and authenticated review remain unverified.
+- [x] Public HTTPS /health: user reports `status: ok` from mobile data on
+  2026-10-15. This verifies that endpoint from that network; it does not prove
+  authenticated app flows. Direct access from this machine still fails during
+  connection/TLS establishment. No certificate verification was bypassed.
 - [ ] Verify HTTPS review and app sign-in with synthetic data.
 - [ ] Check Android/iPhone audio, microphone and PWA install.
 
@@ -76,5 +77,16 @@ machine, both the original thana-korean.onrender.com and the new staging host
 resolve to 216.24.57.16 / 216.24.57.18 but HTTPS requests time out. Earlier attempts
 also reported TLS connection closed. This suggests a shared connectivity problem,
 not proof of an app defect or a working external route. No network/security
-settings were changed. A mobile-data /health check is pending from the user;
-reviewer sign-in and physical-device acceptance cannot yet be claimed.
+settings were changed. The user subsequently reported `status: ok` from mobile
+network /health. This establishes public reachability from that device/network;
+the exact cause of this machine's failure remains undiagnosed. Reviewer/admin
+sign-in and physical-device feature acceptance are still pending.
+
+## Next acceptance action
+
+The user has been asked to use the private generated environment passwords on
+their working mobile connection: first reviewer at /, then admin at /account.
+Only the success/failure result is requested, never the password. This machine
+cannot exercise authenticated online flows until its network route works.
+Android/iPhone audio and install checks are separate device acceptance; provider
+microphone scoring remains disabled and is not part of Free demo provisioning.
