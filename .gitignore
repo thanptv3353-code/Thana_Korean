@@ -1,4 +1,20 @@
 __pycache__/
+.venv/
+data/secret_key
+data/*.sqlite3*
+.env
+
 *.pyc
 .DS_Store
-data/secret_key
+
+data/media/
+
+data/receipts/
+data/bootstrap_credentials.txt
+
+data/backups/
+SOURCE_REVIEW.zip
+
+# Runtime accounts remain on disk but are never part of new source revisions.
+data/users.json
+data/progress.json

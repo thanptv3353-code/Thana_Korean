@@ -1,62 +1,87 @@
-# Thana ພາສາເກົາຫຼີ
+# THANA KOREAN
 
-ເວັບຮຽນພາສາເກົາຫຼີອອນໄລນ໌ ແບບຫຼາຍບົດຮຽນ. Flask + JSON file storage (ບໍ່ຕ້ອງມີ database server).
+A bilingual Lao–Korean learning web app, extending the original Flask project.
+The brand and existing lesson IDs are preserved. This checkout is a local review
+version; it has not replaced thanakorean.com.
 
-## ຟີເຈີ
+## Start
 
-- ນັກຮຽນລົງທະບຽນ ແລະ ລໍຖ້າ admin ອະນຸມັດກ່ອນເຂົ້າໃຊ້ (ຄືກັບ EPS-TOPIK app)
-- ບົດຮຽນຫຼາຍບົດ ຮຽງລຳດັບ, ບົດທີ 2 ຂຶ້ນໄປ ຈະລ໋ອກໄວ້ຈົນກວ່ານັກຮຽນຈະສອບເສັງຍ່ອຍຂອງບົດກ່ອນໜ້າຜ່ານ (≥70%) → ປົດລ໋ອກອັດຕະໂນມັດ
-- ແຕ່ລະບົດມີ: 🎬 ວິດີໂອ (admin ວາງລິ້ງ YouTube ບໍ່ລົງລາຍການ + ລ໋ອກ/ປົດລ໋ອກເອງໄດ້ແຍກຕ່າງຫາກ), 📝 ວຽກບ້ານ (ຕອບແບບຂຽນ), ❓ Quiz (ຫຼາຍຕົວເລືອກ, ຝຶກໄດ້ບໍ່ຈຳກັດຄັ້ງ), 🏆 ສອບເສັງຍ່ອຍ (ຫຼາຍຕົວເລືອກ, ຕັດເກນຜ່ານ 70%)
-- Admin panel: ອະນຸມັດ/ປະຕິເສດນັກຮຽນ, ສ້າງ/ລຶບບົດຮຽນ, ເພີ່ມ/ລ໋ອກ/ປົດລ໋ອກວິດີໂອ, ຈັດການຄໍາຖາມ, ເບິ່ງຕາຕະລາງຄວາມຄືບໜ້າຂອງນັກຮຽນທັງໝົດ, ດາວໂຫຼດຂໍ້ມູນສຳຮອງ (zip)
-
-## ຕິດຕັ້ງ ແລະ ແລ່ນ
-
-```bash
-pip install -r requirements.txt
-python3 app.py        # ຫຼື PORT=8035 python3 app.py
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python scripts/init_content.py
+.venv/bin/python app.py
 ```
 
-ເປີດ `http://localhost:8035`. ໜ້າ admin ຢູ່ `http://localhost:8035/admin`.
+Open http://127.0.0.1:8035. Existing imported accounts are preserved. A genuinely
+fresh installation creates an administrator with a random password in the private
+`data/bootstrap_credentials.txt`, unless `THANA_BOOTSTRAP_PASSWORD` is configured.
+Never publish that file. Existing installations do not receive a password change.
+Use `/account` to change your own password. Production mode refuses the legacy
+default administrator credential.
 
-## ບັນຊີ Admin ເລີ່ມຕົ້ນ
+## Main pages
 
-- Username: `admin`
-- Password: `thana-admin-2026`
+| Page | Purpose |
+|---|---|
+| `/` | Bilingual home, practice and speaking |
+| `/courses` | Unified legacy and structured courses |
+| `/learn` | Preserved lesson application and password sign-in |
+| `/mock-exam` | Timed reading mock exams with saved-answer resume |
+| `/dictionary`, `/review` | Vocabulary, audio and spaced review |
+| `/account`, `/membership` | Profile, password, recovery and Premium |
+| `/community`, `/tutor` | Moderated discussion and optional tutor |
+| `/management` | Role-aware dashboard and account/payment settings |
+| `/editor`, `/question-editor` | Structured lessons and EPS bank editing |
+| `/media-studio`, `/vocabulary-studio`, `/studio` | Assets, vocabulary, EPS review |
+| `/admin`, `/legacy-admin` | Central dashboard sign-in; original admin tools |
 
-**ກະລຸນາປ່ຽນລະຫັດຜ່ານນີ້ຫຼັງຈາກເຂົ້າໃຊ້ຄັ້ງທຳອິດ** (ແກ້ໄຂໂດຍກົງໃນ `data/users.json` ຫຼືເພີ່ມໜ້າປ່ຽນລະຫັດຜ່ານໃນອະນາຄົດ).
+## Data
 
-## ໂຄງສ້າງຂໍ້ມູນ
+Legacy JSON is imported once into `data/legacy.sqlite3`; original JSON files are
+not overwritten. New content, progress and administration use
+`data/platform.sqlite3`. Media and receipt files are private runtime files and
+are ignored by Git. Use both `THANA_DATA_DIR` and `THANA_PLATFORM_DB` when setting
+an external persistent storage directory. Accounts are never copied from the
+repository into a fresh external data directory; bundled public lessons are.
 
-- `data/users.json` — ບັນຊີ admin + ນັກຮຽນ (ລະຫັດຜ່ານ hash ດ້ວຍ pbkdf2)
-- `data/lessons.json` — ບົດຮຽນທັງໝົດ ພ້ອມວິດີໂອ/ວຽກບ້ານ/quiz/ສອບເສັງ (ຄໍາຕອບຖືກເກັບໄວ້ໃນນີ້ — **ຢ່າສົ່ງໄຟລ໌ນີ້ໃຫ້ນັກຮຽນ**)
-- `data/progress.json` — ຄວາມຄືບໜ້າຂອງນັກຮຽນແຕ່ລະຄົນຕໍ່ບົດຮຽນ
+The administrator backup exports current legacy JSON, a platform DB snapshot,
+media and private receipts. Restore only into an isolated empty directory:
 
-ວິດີໂອບໍ່ໄດ້ອັບໂຫຼດເກັບໄວ້ໃນເຄື່ອງ server — admin ອັບໂຫຼດຂຶ້ນ YouTube ເອງກ່ອນ (ຕັ້ງເປັນ **Unlisted / ບໍ່ລົງລາຍການ**) ແລ້ວວາງລິ້ງໃນ admin panel. ນີ້ຄືເຫດຜົນ: hosting ຟຣີສ່ວນຫຼາຍ (ເຊັ່ນ Render free tier) ບໍ່ຮັບປະກັນວ່າໄຟລ໌ທີ່ອັບໂຫຼດຈະຄົງຢູ່ຫຼັງຈາກ deploy ໃໝ່ ຫຼື server restart — ແຕ່ YouTube ຮັກສາໄຟລ໌ວິດີໂອຖາວອນ ແລະ ຟຣີ.
+```sh
+python3 scripts/restore_backup.py backup.zip /private/tmp/thana-restore
+python3 scripts/restore_backup.py backup.zip /private/tmp/thana-restore --apply
+```
 
-## ການເຜີຍແຜ່ອອນລາຍ (Deploy ໃຫ້ໃຊ້ໄດ້ 24 ຊົ່ວໂມງ)
+The first command validates without writing. The second refuses existing data.
+Run the restored copy with both storage environment variables pointing to that
+directory. Validate counts, accounts and media before any production cutover.
 
-ໂປຣເຈັກນີ້ຕັ້ງຄ່າໄວ້ພ້ອມ deploy ຂຶ້ນ [Render](https://render.com) (ມີແພັນຟຣີ) ຜ່ານ `render.yaml` + `Procfile` ແລ້ວ. ຂັ້ນຕອນ:
+## Optional services
 
-1. **ສ້າງ GitHub repo ແລະ push ໂຄດ** (ຈາກໃນໂຟນເດີ້ນີ້):
-   ```bash
-   # ສ້າງ repo ຫວ່າງຢູ່ https://github.com/new ກ່ອນ (ຢ່າຕິກ "Add README")
-   git remote add origin https://github.com/<ຊື່ຜູ້ໃຊ້>/thana-korean.git
-   git branch -M main
-   git push -u origin main
-   ```
-2. **ສະໝັກ Render** (https://render.com) ດ້ວຍບັນຊີ GitHub ດຽວກັນ
-3. ໃນ Render dashboard → **New +** → **Blueprint** → ເລືອກ repo `thana-korean` → Render ຈະອ່ານ `render.yaml` ອັດຕະໂນມັດ ແລະ ຕັ້ງຄ່າໃຫ້ໝົດ → ກົດ **Apply**
-4. ລໍຖ້າ build ສຳເລັດ (~2-3 ນາທີ) → ຈະໄດ້ລິ້ງແບບ `https://thana-korean.onrender.com` ທີ່ນັກຮຽນເຂົ້າໄດ້ຈາກທຸກບ່ອນ 24 ຊົ່ວໂມງ
+See `.env.example` and `docs/INTEGRATIONS.md`. The app does not automatically load
+dotenv. Google sign-in, OpenAI Tutor and Azure speech remain disabled until their
+credentials and configuration are supplied. No external paid service was called
+during development. Premium receipt collection also starts disabled; an
+administrator sets a price and payment instructions before enabling it.
 
-### ຂໍ້ຈຳກັດຂອງແພັນຟຣີ (ສຳຄັນ)
-- **server ຈະຫຼັບຫຼັງບໍ່ມີຄົນເຂົ້າໃຊ້ 15 ນາທີ** — ການເຂົ້າຄັ້ງທຳອິດຫຼັງຈາກນັ້ນຈະຊ້າປະມານ 30-60 ວິນາທີ (server ກຳລັງ "ຕື່ນ") ຫຼັງຈາກນັ້ນຈະໄວປົກກະຕິ
-- **ຂໍ້ມູນ (ນັກຮຽນ, ບົດຮຽນ, ຄະແນນ) ອາດຫາຍໄດ້** ຖ້າ redeploy ໂຄດໃໝ່ ຫຼື Render restart server ໃນບາງກໍລະນີ, ເພາະ disk ຟຣີ ບໍ່ແມ່ນ persistent 100% — **ໃຫ້ກົດ "⬇️ ສຳຮອງຂໍ້ມູນ" ຢູ່ໜ້າ admin ເປັນປະຈຳ** (ຈະໄດ້ໄຟລ໌ .zip ມາເກັບໄວ້ໃນເຄື່ອງ) ໂດຍສະເພາະກ່ອນຈະ redeploy ຫຼືແກ້ໄຂໂຄດຄັ້ງໃໝ່
-- ຖ້າຢາກໄດ້ຄວາມໜ້າເຊື່ອຖືສູງກວ່ານີ້ (ບໍ່ຫຼັບ, ຂໍ້ມູນຄົງຢູ່ແນ່ນອນ) ສາມາດອັບເກຣດເປັນແພັນເສຍເງິນຂອງ Render (~$7/ເດືອນຂຶ້ນໄປ) ພາຍຫຼັງໄດ້ໂດຍບໍ່ຕ້ອງແກ້ໂຄດ
+## Checks and handoff
 
-### ອັບເດດເນື້ອຫາຫຼັງ deploy ແລ້ວ
-ຫຼັງຈາກແກ້ບົດຮຽນ/ຄຳຖາມຜ່ານ admin panel ຢູ່ເວັບຈິງ, ຂໍ້ມູນຈະຖືກບັນທຶກຢູ່ໃນ server ນັ້ນເລີຍ (ບໍ່ຕ້ອງ push ໂຄດໃໝ່). ຕ້ອງ push ໂຄດໃໝ່ສະເພາະເວລາແກ້ໄຂໂຄງສ້າງເວັບ (HTML/CSS/JS/Python) ເທົ່ານັ້ນ.
+```sh
+python3 -m unittest discover -s tests -v
+```
 
-## ໝາຍເຫດ
+Tests use isolated databases and synthetic accounts. Browser QA also uses
+synthetic accounts in a separate server. See `docs/START_HERE.md` and
+`docs/FINAL_DELIVERY.md` for current scope and remaining deployment work.
 
-- ນີ້ແມ່ນໂປຣເຈັກແຍກຕ່າງຫາກຈາກ EPS-TOPIK app (port 8034); ແລ່ນຢູ່ port 8035 ຄົນລະຕົວ, ຂໍ້ມູນບໍ່ປົນກັນ
-- ຊື່ແບຣນ "Thana ພາສາເກົາຫຼີ" ເອົາມາຈາກໜ້າ Facebook `facebook.com/ThanaRoom` (ດຶງໄດ້ພຽງຊື່ໜ້າ, Facebook ບໍ່ໃຫ້ຂໍ້ມູນອື່ນແບບບໍ່ລ໋ອກອິນ) — ຖ້າມີໂລໂກ້/ຄໍາອະທິບາຍເພີ່ມເຕີມ ສາມາດເພີ່ມໄດ້ພາຍຫຼັງ
+The SQLite implementation serializes legacy requests for consistency. It is not
+a normalized PostgreSQL migration. PWA installation is an optional web shell;
+full offline learning and native App Store applications are not included.
+
+## Staging preparation
+
+See `docs/STAGING_RENDER.md` for a separate Render review service. The candidate
+`render.staging.yaml` uses durable storage and private reviewer access. It has
+not been applied to a hosting account. Run `python3 scripts/verify_staging.py`
+for isolated production-mode initialization and restart checks.

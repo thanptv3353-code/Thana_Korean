@@ -3,10 +3,11 @@ let LESSONS = [];
 let ACTIVE_LESSON_ID = null;
 
 async function api(path, opts = {}) {
+  const token = opts.method && opts.method !== 'GET' ? (await (await fetch('/api/csrf')).json()).token : '';
   const isForm = opts.body instanceof FormData;
   const res = await fetch(path, {
     method: opts.method || 'GET',
-    headers: isForm ? {} : { 'Content-Type': 'application/json' },
+    headers: isForm ? { 'X-CSRF-Token': token } : { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
     body: isForm ? opts.body : (opts.body ? JSON.stringify(opts.body) : undefined),
   });
   const data = await res.json().catch(() => ({}));
@@ -40,7 +41,7 @@ async function boot() {
 
   try {
     const { user } = await api('/api/me');
-    if (user && user.role === 'admin') { afterLogin(); return; }
+    if (user && user.status === 'approved' && ['admin','teacher'].includes(user.role)) { afterLogin(); return; }
   } catch (e) {}
   document.getElementById('viewAdminAuth').classList.remove('hidden');
 }
@@ -51,7 +52,7 @@ async function doLogin() {
   const msg = document.getElementById('authMsg');
   try {
     const { user } = await api('/api/login', { method: 'POST', body: { username, password } });
-    if (user.role !== 'admin') throw new Error('ບັນຊີນີ້ບໍ່ແມ່ນ admin');
+    if (!['admin','teacher'].includes(user.role)) throw new Error('ບັນຊີນີ້ບໍ່ແມ່ນ admin');
     afterLogin();
   } catch (e) { msg.textContent = e.message; }
 }
@@ -62,6 +63,7 @@ async function doLogout() {
 }
 
 function afterLogin() {
+  if (location.pathname !== '/legacy-admin') { location.replace('/management'); return; }
   document.getElementById('viewAdminAuth').classList.add('hidden');
   document.getElementById('viewAdmin').classList.remove('hidden');
   loadStudents();

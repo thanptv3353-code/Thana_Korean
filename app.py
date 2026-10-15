@@ -12,7 +12,7 @@ from flask import (Flask, jsonify, request, session, send_file,
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(BASE)
-DATA = os.path.join(BASE, 'data')
+DATA = os.environ.get('THANA_DATA_DIR', os.path.join(BASE, 'data'))
 USERS_FILE = os.path.join(DATA, 'users.json')
 LESSONS_FILE = os.path.join(DATA, 'lessons.json')
 PROGRESS_FILE = os.path.join(DATA, 'progress.json')
@@ -33,55 +33,77 @@ def extract_youtube_id(url_or_id):
         return url_or_id
     return None
 
-_lock = threading.Lock()
-
-def _load(path, default):
-    if os.path.exists(path):
-        with open(path, encoding='utf-8') as f:
-            return json.load(f)
-    return default
-
-def _save(path, obj):
-    tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        json.dump(obj, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, path)
+from legacy_storage import LegacyStorage
+_storage = LegacyStorage(DATA)
+_lock = _storage.gate
+_load = _storage.load
+_save = _storage.save
 
 # ---------- password hashing ----------
 def hash_pw(pw, salt=None):
     salt = salt or secrets.token_hex(16)
-    h = hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), 100_000).hex()
-    return f'{salt}${h}'
+    iterations = 600_000
+    h = hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), iterations).hex()
+    return f'pbkdf2_sha256${iterations}${salt}${h}'
 
 def check_pw(pw, stored):
-    try:
-        salt, _ = stored.split('$')
-    except ValueError:
+    if not isinstance(pw, str) or not isinstance(stored, str):
         return False
-    return secrets.compare_digest(hash_pw(pw, salt), stored)
+    try:
+        parts = stored.split('$')
+        if len(parts) == 2:
+            salt, expected = parts
+            iterations = 100_000
+        elif len(parts) == 4 and parts[0] == 'pbkdf2_sha256':
+            _, count, salt, expected = parts
+            iterations = int(count)
+            if not 100_000 <= iterations <= 1_000_000:
+                return False
+        else:
+            return False
+        actual = hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), iterations).hex()
+        return secrets.compare_digest(actual, expected)
+    except (ValueError, TypeError):
+        return False
 
 # ---------- bootstrap ----------
 if not os.path.exists(SECRET_FILE):
-    with open(SECRET_FILE, 'w') as f:
+    with os.fdopen(os.open(SECRET_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600), 'w') as f:
         f.write(secrets.token_hex(32))
 with open(SECRET_FILE) as f:
     FLASK_SECRET = f.read().strip()
 
 users = _load(USERS_FILE, None)
 if users is None:
+    bootstrap_password = os.environ.get('THANA_BOOTSTRAP_PASSWORD') or secrets.token_urlsafe(24)
+    if len(bootstrap_password) < 12:
+        raise RuntimeError('THANA_BOOTSTRAP_PASSWORD must have at least 12 characters')
+    if not os.environ.get('THANA_BOOTSTRAP_PASSWORD'):
+        credential_path = os.path.join(DATA, 'bootstrap_credentials.txt')
+        with os.fdopen(os.open(credential_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600), 'w') as f:
+            f.write('username: admin\npassword: ' + bootstrap_password + '\n')
     users = {
         'admin': {
             'username': 'admin', 'name': 'Admin', 'role': 'admin',
-            'status': 'approved', 'pw': hash_pw('thana-admin-2026'),
+            'status': 'approved', 'pw': hash_pw(bootstrap_password),
         }
     }
     _save(USERS_FILE, users)
 
-lessons = _load(LESSONS_FILE, [])
+lessons = _load(LESSONS_FILE, None)
+if lessons is None:
+    lessons = _load(os.path.join(BASE, 'data', 'lessons.json'), [])
 progress = _load(PROGRESS_FILE, {})
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
+if os.environ.get('THANA_ENV') == 'production':
+    if any(u.get('role') == 'admin' and not str(u.get('pw', '')).startswith('pbkdf2_sha256$') for u in users.values()):
+        raise RuntimeError('Upgrade legacy administrator passwords before production')
+    app.config['SESSION_COOKIE_SECURE'] = True
+from staging_access import install_staging_access
+install_staging_access(app)
+_storage.install(app, globals())
 
 # ============================================================
 # helpers
@@ -182,31 +204,83 @@ def public_lesson_detail(lesson, username, role):
 def login_required(f):
     @wraps(f)
     def wrap(*a, **kw):
-        if 'username' not in session:
+        u = current_user()
+        if not u or u.get('status') != 'approved':
+            session.clear()
             return jsonify(error='ກະລຸນາເຂົ້າສູ່ລະບົບ'), 401
+        session['role'] = u['role']
         return f(*a, **kw)
     return wrap
 
 def admin_required(f):
     @wraps(f)
     def wrap(*a, **kw):
-        if session.get('role') != 'admin':
+        u = current_user()
+        if not u or u.get('status') != 'approved' or u.get('role') != 'admin':
             return jsonify(error='ສະເພາະ admin ເທົ່ານັ້ນ'), 403
         return f(*a, **kw)
     return wrap
 
+def content_required(f):
+    @wraps(f)
+    def wrap(*a, **kw):
+        u = current_user()
+        if not u or u.get('status') != 'approved' or u.get('role') not in ('admin', 'teacher'):
+            return jsonify(error='Content staff only'), 403
+        return f(*a, **kw)
+    return wrap
+
 def current_user():
-    return users.get(session.get('username'))
+    u = users.get(session.get('username'))
+    if u and session.get('auth_version', 0) == u.get('auth_version', 0):
+        return u
+    return None
 
 # ============================================================
 # pages
 # ============================================================
+@app.get('/health')
+def health():
+    return jsonify(status='ok')
+
+@app.after_request
+def response_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'same-origin'
+    response.headers['Content-Security-Policy'] = "object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+    if request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store'
+    return response
+
 @app.route('/')
 def index():
+    return render_template('hub.html')
+
+@app.get('/service-worker.js')
+def service_worker():
+    from flask import send_from_directory
+    response = send_from_directory(os.path.join(BASE, 'static'), 'service-worker.js', mimetype='application/javascript')
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+@app.route('/learn')
+def learn_page():
     return render_template('index.html')
 
 @app.route('/admin')
 def admin_page():
+    user = current_user()
+    if user and user.get('status') == 'approved' and user.get('role') in ('admin', 'teacher'):
+        return redirect('/management')
+    return render_template('admin.html')
+
+@app.get('/legacy-admin')
+def legacy_admin_page():
+    user = current_user()
+    if not user or user.get('status') != 'approved':
+        return redirect('/admin')
+    if user.get('role') != 'admin':
+        abort(403)
     return render_template('admin.html')
 
 # ============================================================
@@ -215,12 +289,14 @@ def admin_page():
 @app.post('/api/register')
 def register():
     d = request.get_json(force=True)
-    name = (d.get('name') or '').strip()
-    uname = (d.get('username') or '').strip().lower()
-    pw = d.get('password') or ''
-    if not name or not uname or len(pw) < 4:
-        return jsonify(error='ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບ (ລະຫັດຜ່ານຢ່າງໜ້ອຍ 4 ຕົວ)'), 400
-    if not uname.replace('_', '').isalnum():
+    if not all(isinstance(d.get(k), str) for k in ('name', 'username', 'password')):
+        return jsonify(error='Invalid registration fields'), 400
+    name = d['name'].strip()
+    uname = d['username'].strip().lower()
+    pw = d['password']
+    if not name or not uname or not isinstance(pw, str) or not 8 <= len(pw) <= 128:
+        return jsonify(error='ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບ (ລະຫັດຜ່ານ 8–128 ຕົວ)'), 400
+    if not re.fullmatch(r'[a-z0-9_]{3,50}', uname):
         return jsonify(error='ຊື່ຜູ້ໃຊ້ໃຫ້ໃຊ້ a-z, 0-9, _ ເທົ່ານັ້ນ'), 400
     with _lock:
         if uname in users:
@@ -236,14 +312,17 @@ def register():
 @app.post('/api/login')
 def login():
     d = request.get_json(force=True)
-    uname = (d.get('username') or '').strip().lower()
-    pw = d.get('password') or ''
+    if not isinstance(d.get('username'), str) or not isinstance(d.get('password'), str) or len(d['password']) > 128:
+        return jsonify(error='Invalid login fields'), 400
+    uname = d['username'].strip().lower()
+    pw = d['password']
     u = users.get(uname)
     if not u or not check_pw(pw, u['pw']):
         return jsonify(error='ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ'), 401
     if u['status'] != 'approved':
         return jsonify(error='ບັນຊີຂອງທ່ານຍັງບໍ່ໄດ້ຮັບການອະນຸມັດ'), 403
     session['username'] = uname
+    session['auth_version'] = u.get('auth_version', 0)
     session['role'] = u['role']
     return jsonify(ok=True, user={'username': uname, 'name': u['name'], 'role': u['role']})
 
@@ -304,7 +383,7 @@ def _grade(qs, answers):
     detail = []
     for q in qs:
         given = answers.get(q['id'])
-        ok = given is not None and int(given) == int(q['answer'])
+        ok = type(given) is int and given == int(q['answer'])
         if ok:
             correct += 1
         detail.append({'id': q['id'], 'correct': ok, 'answer': q['answer'], 'given': given})
@@ -373,6 +452,8 @@ def admin_approve(uname):
         u = users.get(uname)
         if not u:
             return jsonify(error='ບໍ່ພົບຜູ້ໃຊ້'), 404
+        if u.get('role') != 'student':
+            return jsonify(error='Use account management for staff accounts'), 400
         u['status'] = 'approved'
         _save(USERS_FILE, users)
     return jsonify(ok=True)
@@ -384,6 +465,8 @@ def admin_reject(uname):
         u = users.get(uname)
         if not u:
             return jsonify(error='ບໍ່ພົບຜູ້ໃຊ້'), 404
+        if u.get('role') != 'student':
+            return jsonify(error='Use account management for staff accounts'), 400
         u['status'] = 'rejected'
         _save(USERS_FILE, users)
     return jsonify(ok=True)
@@ -603,12 +686,19 @@ def admin_backup():
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
         for path in (USERS_FILE, LESSONS_FILE, PROGRESS_FILE):
-            if os.path.exists(path):
-                z.write(path, os.path.basename(path))
+            z.writestr(os.path.basename(path), json.dumps(_load(path, [] if path == LESSONS_FILE else {}), ensure_ascii=False, indent=2))
+        from backup_storage import append_platform_backup
+        append_platform_backup(z, BASE, DATA)
     buf.seek(0)
     fname = time.strftime('thana-backup-%Y%m%d-%H%M%S.zip')
     return send_file(buf, mimetype='application/zip', as_attachment=True, download_name=fname)
 
+from csrf import install_csrf
+install_csrf(app)
+
+from platform_routes import install
+install(app, globals())
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8035))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=os.environ.get('THANA_DEBUG') == '1')

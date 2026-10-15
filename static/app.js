@@ -4,9 +4,10 @@ let LESSONS = [];
 let CURRENT_LESSON = null;
 
 async function api(path, opts = {}) {
+  const token = opts.method && opts.method !== 'GET' ? (await (await fetch('/api/csrf')).json()).token : '';
   const res = await fetch(path, {
     method: opts.method || 'GET',
-    headers: opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' },
+    headers: opts.body instanceof FormData ? { 'X-CSRF-Token': token } : { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
     body: opts.body instanceof FormData ? opts.body : (opts.body ? JSON.stringify(opts.body) : undefined),
   });
   const data = await res.json().catch(() => ({}));
@@ -85,8 +86,8 @@ async function logout() {
 function afterLogin() {
   document.getElementById('userbox').classList.remove('hidden');
   document.getElementById('hello').textContent = `👋 ${ME.name}`;
-  document.getElementById('adminLink').classList.toggle('hidden', ME.role !== 'admin');
-  showDash();
+  document.getElementById('adminLink').classList.toggle('hidden', !['admin','teacher'].includes(ME.role));
+  showDash().then(()=>{const lid=new URLSearchParams(location.search).get('lesson');if(lid)openLesson(lid);}).catch(e=>alert(e.message));
 }
 
 function showAuth() {
@@ -105,6 +106,10 @@ async function showDash() {
   const { lessons } = await api('/api/lessons');
   LESSONS = lessons;
   renderLessonList();
+  const next = LESSONS.find(l => l.status === 'in_progress') || LESSONS.find(l => l.unlocked);
+  const button = document.getElementById('continueLegacy');
+  button.hidden = !next;
+  if (next) { button.textContent = '▶ ຮຽນຕໍ່ / 계속 학습 · ' + next.title_lo; button.onclick = () => openLesson(next.id); }
 }
 
 function renderLessonList() {
@@ -153,7 +158,7 @@ async function openLesson(lid) {
     document.getElementById('lsTitleLo').textContent = `ບົດທີ ${lesson.order}: ${lesson.title_lo}`;
     document.getElementById('lsTitleKo').textContent = lesson.title_ko || '';
     document.getElementById('lsDesc').textContent = lesson.description || '';
-    switchLessonTab('video');
+    switchLessonTab(lesson.videos.some(v => v.playable) ? 'video' : lesson.quiz.length ? 'quiz' : lesson.homework.length ? 'homework' : 'exam');
     renderVideo();
     renderHomework();
     renderQuiz();
@@ -265,7 +270,7 @@ async function submitQuiz() {
     const r = await api(`/api/lessons/${CURRENT_LESSON.id}/quiz`, { method: 'POST', body: { answers } });
     const box = document.getElementById('quizResult');
     box.classList.remove('hidden');
-    box.innerHTML = `<div class="scorebig">${r.score}%</div>`;
+    box.innerHTML = `<div class="scorebig">${r.score}%</div>` + r.detail.map(d => { const q = CURRENT_LESSON.quiz.find(q => q.id === d.id); return `<p>${d.correct ? '✓' : '✗'} ${escapeHtml(q.question)} → ${escapeHtml(q.options[d.answer])}</p>`; }).join('');
     if (!CURRENT_LESSON.progress) CURRENT_LESSON.progress = {};
     CURRENT_LESSON.progress.quiz_best = Math.max(CURRENT_LESSON.progress.quiz_best || 0, r.score);
     CURRENT_LESSON.progress.quiz_attempts = (CURRENT_LESSON.progress.quiz_attempts || 0) + 1;
@@ -304,3 +309,5 @@ async function submitExam() {
 function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+
+api('/api/oauth/status').then(d=>document.getElementById('googleLogin').hidden=!d.google).catch(()=>{});

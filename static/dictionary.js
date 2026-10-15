@@ -1,0 +1,14 @@
+'use strict';
+const $=id=>document.getElementById(id);let saved=new Set(),loggedIn=false,searchVersion=0;
+async function toggle(w,button){button.disabled=true;try{const token=(await(await fetch('/api/csrf')).json()).token;const r=await fetch('/api/platform/saved-words/'+encodeURIComponent(w.id),{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':token},body:JSON.stringify({saved:!saved.has(w.id)})});if(r.status===401){$('saveMessage').textContent='ກະລຸນາເຂົ້າລະບົບ / 먼저 로그인하세요';return;}if(!r.ok)throw Error('ບັນທຶກບໍ່ສຳເລັດ / 저장 실패');const d=await r.json();if(d.saved)saved.add(w.id);else saved.delete(w.id);button.textContent=d.saved?'★ ບັນທຶກແລ້ວ / 저장됨':'☆ ບັນທຶກຄຳ / 단어 저장';button.setAttribute('aria-pressed',String(d.saved));$('saveMessage').textContent='✓ ບັນທຶກແລ້ວ / 저장했습니다';if($('savedOnly').checked)await search();}catch(e){$('saveMessage').textContent=e.message;}finally{button.disabled=false;}}
+async function search(){const version=++searchVersion;try{
+ const [r,s]=await Promise.all([fetch('/api/platform/vocabulary?q='+encodeURIComponent($('query').value)+'&scope='+($('savedOnly').checked?'saved':'all')),fetch('/api/platform/saved-words')]);
+ if(r.status===401)throw Error('ກະລຸນາເຂົ້າລະບົບ / 먼저 로그인하세요');if(!r.ok)throw Error('ຄົ້ນຫາບໍ່ສຳເລັດ / 검색 실패');const d=await r.json();
+ if(s.ok){saved=new Set((await s.json()).ids);loggedIn=true;}else if(s.status===401){saved=new Set();loggedIn=false;}else throw Error('ບໍ່ສາມາດໂຫຼດຄຳທີ່ບັນທຶກ / 저장한 단어를 불러오지 못했습니다');
+ if(version!==searchVersion)return;
+ $('words').innerHTML='';if($('savedOnly').checked&&!loggedIn){$('status').textContent='ກະລຸນາເຂົ້າລະບົບ / 먼저 로그인하세요';return;}
+ const words=d.words.filter(w=>!$('savedOnly').checked||saved.has(w.id));$('status').textContent=`${words.length} ຄຳ / 단어 (ສູງສຸດ / 최대 100)`;
+ if(!words.length)$('words').textContent='ບໍ່ພົບຄຳສັບ / 단어가 없습니다';
+ for(const w of words){const box=document.createElement('article');for(const [tag,value] of [['h2',w.ko],['h3',w.lo],['p',w.category],['p',w.example_ko],['p',w.example_lo]]){if(!value)continue;const e=document.createElement(tag);e.textContent=value;box.append(e);}for(const language of ['ko','lo'])if(w['audio_'+language]){const label=document.createElement('p');label.textContent=language==='ko'?'한국어':'ລາວ';const a=document.createElement('audio');a.controls=true;a.preload='none';a.src=w['audio_'+language];box.append(label,a);}const button=document.createElement('button');button.textContent=saved.has(w.id)?'★ ບັນທຶກແລ້ວ / 저장됨':'☆ ບັນທຶກຄຳ / 단어 저장';button.setAttribute('aria-pressed',String(saved.has(w.id)));button.onclick=()=>toggle(w,button);box.append(button);$('words').append(box);}
+ }catch(e){if(version===searchVersion)$('status').textContent=e.message;}}
+$('search').onsubmit=e=>{e.preventDefault();search();};$('savedOnly').onchange=search;search();

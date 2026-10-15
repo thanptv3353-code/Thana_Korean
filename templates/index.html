@@ -8,13 +8,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
-</head>
+<link rel="stylesheet" href="/static/shared-nav.css"></head>
 <body>
 <header class="topbar">
   <div class="brand"><span class="brand-icon">🇰🇷</span> <span class="brand-text">Thana<small>ພາສາເກົາຫຼີ 한국어</small></span></div>
   <div id="userbox" class="userbox hidden">
     <span id="hello"></span>
-    <a id="adminLink" class="btn small hidden" href="/admin">⚙️ Admin</a>
+    <a id="adminLink" class="btn small hidden" href="/management">⚙️ Admin</a>
     <button id="btnLogout" class="btn small outline">ອອກຈາກລະບົບ</button>
   </div>
 </header>
@@ -25,7 +25,7 @@
     <button id="tabLogin" class="tab active">ເຂົ້າສູ່ລະບົບ</button>
     <button id="tabRegister" class="tab">ລົງທະບຽນ</button>
   </div>
-  <div id="formLogin">
+  <p><a id="googleLogin" href="/auth/google" hidden>Google · ເຂົ້າລະບົບ / 로그인</a></p><div id="formLogin">
     <label>ຊື່ຜູ້ໃຊ້ <input id="liUser" autocomplete="username"></label>
     <label>ລະຫັດຜ່ານ <input id="liPw" type="password" autocomplete="current-password"></label>
     <button id="btnLogin" class="btn primary wide">ເຂົ້າສູ່ລະບົບ</button>
@@ -34,7 +34,7 @@
   <div id="formRegister" class="hidden">
     <label>ຊື່ ແລະ ນາມສະກຸນ <input id="rgName"></label>
     <label>ຊື່ຜູ້ໃຊ້ (a-z, 0-9, _) <input id="rgUser" autocomplete="username"></label>
-    <label>ລະຫັດຜ່ານ (ຢ່າງໜ້ອຍ 4 ຕົວ) <input id="rgPw" type="password" autocomplete="new-password"></label>
+    <label>ລະຫັດຜ່ານ (8–128 ຕົວ) <input id="rgPw" type="password" autocomplete="new-password"></label>
     <button id="btnRegister" class="btn primary wide">ລົງທະບຽນ</button>
     <p class="note">ຫຼັງລົງທະບຽນແລ້ວ ກະລຸນາລໍຖ້າ admin ອະນຸມັດບັນຊີຂອງທ່ານ</p>
   </div>
@@ -44,7 +44,7 @@
 <!-- ========== DASHBOARD (lesson list) ========== -->
 <section id="viewDash" class="hidden">
   <h2 class="pagetitle">ບົດຮຽນທັງໝົດ</h2>
-  <div id="lessonList" class="lessonlist"></div>
+  <button id="continueLegacy" class="btn primary" hidden>▶ ຮຽນຕໍ່ / 계속 학습</button><div id="lessonList" class="lessonlist"></div>
 </section>
 
 <!-- ========== LESSON DETAIL ========== -->
@@ -90,5 +90,5 @@
 </section>
 
 <script src="/static/app.js"></script>
-</body>
+{% include 'learner-nav.html' %}</body>
 </html>

@@ -1,0 +1,37 @@
+# User-selected Free staging demo. Select explicitly for a NEW service only.
+# No persistent disk: test data can reset on restart. No real accounts or uploads.
+# Private reviewer/admin credentials are generated in Render, never in source.
+services:
+  - type: web
+    name: thana-korean-stage-demo
+    runtime: python
+    plan: free
+    region: singapore
+    numInstances: 1
+    autoDeployTrigger: "off"
+    buildCommand: pip install -r requirements.staging.lock.txt
+    startCommand: python scripts/start_server.py
+    healthCheckPath: /health
+    envVars:
+      - key: THANA_ENV
+        value: production
+      - key: THANA_DATA_DIR
+        value: /tmp/thana-stage-demo
+      - key: THANA_PLATFORM_DB
+        value: /tmp/thana-stage-demo/platform.sqlite3
+      - key: THANA_STAGING_ENABLED
+        value: "1"
+      - key: THANA_STAGING_DEMO
+        value: "1"
+      - key: THANA_BOOTSTRAP_PASSWORD
+        generateValue: true
+      - key: THANA_STAGING_USER
+        value: reviewer
+      - key: THANA_STAGING_PASSWORD
+        generateValue: true
+      - key: THANA_AI_ENABLED
+        value: "0"
+      - key: THANA_SPEECH_ENABLED
+        value: "0"
+      - key: THANA_TTS_ENABLED
+        value: "0"
