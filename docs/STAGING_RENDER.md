@@ -30,7 +30,7 @@ app administrator password, distinct from the reviewer gate. Free has no Shell.
   2026-10-15. This verifies that endpoint from that network; it does not prove
   authenticated app flows. Direct access from this machine still fails during
   connection/TLS establishment. No certificate verification was bypassed.
-- [ ] Verify HTTPS review and app sign-in with synthetic data.
+- [x] User confirms both reviewer gate and admin app sign-in work on 2026-10-15.
 - [ ] Check Android/iPhone audio, microphone and PWA install.
 
 ## Local verification
@@ -79,14 +79,19 @@ also reported TLS connection closed. This suggests a shared connectivity problem
 not proof of an app defect or a working external route. No network/security
 settings were changed. The user subsequently reported `status: ok` from mobile
 network /health. This establishes public reachability from that device/network;
-the exact cause of this machine's failure remains undiagnosed. Reviewer/admin
-sign-in and physical-device feature acceptance are still pending.
+the exact cause of this machine's failure remains undiagnosed. The user then
+confirmed both reviewer and admin sign-in succeed. Physical-device audio and
+install behavior remain future acceptance checks.
 
-## Next acceptance action
+## Staging provisioning acceptance
 
-The user has been asked to use the private generated environment passwords on
-their working mobile connection: first reviewer at /, then admin at /account.
-Only the success/failure result is requested, never the password. This machine
-cannot exercise authenticated online flows until its network route works.
+Completed on 2026-10-15: separate Free service, sanitized branch, locked runtime,
+private reviewer gate, paid providers disabled, live server health and user
+confirmation of both reviewer and admin sign-in. Online sign-in evidence is the
+user's report, not an automated browser test from this machine. No credentials
+were requested in chat or published. The deployment step is complete.
+
 Android/iPhone audio and install checks are separate device acceptance; provider
 microphone scoring remains disabled and is not part of Free demo provisioning.
+Production cutover, durable storage, live providers and curriculum expansion
+remain future work; this acceptance does not claim they are completed.
