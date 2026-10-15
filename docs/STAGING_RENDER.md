@@ -1,6 +1,6 @@
 # Render Free staging
 
-User selected Free on 2026-10-15. Deployment is prepared but not yet online.
+User selected Free on 2026-10-15. A separate Free service deployed successfully (Live, 58.7 seconds).
 The existing thana-korean service (srv-d9argmjeo5us73dfbf4g) uses main,
 commit a7fc75d. Do not modify or sync its Blueprint.
 
@@ -21,9 +21,14 @@ app administrator password, distinct from the reviewer gate. Free has no Shell.
 
 ## Acceptance checklist
 
-- [ ] Push sanitized source on a separate branch, excluding runtime accounts.
-- [ ] Create a NEW Free staging service with the custom Blueprint file.
-- [ ] Verify live /health 200 and reviewer gate at /.
+- [x] Sanitized source uploaded on codex/staging-review-20261015, commit 628f0d4.
+  Remote tree bdebf993052d352b188e3b707e75a56f16b7c120 matches the tested local tree.
+- [x] Created NEW Free service srv-db89708m7kps73di7p5g with custom Blueprint.
+  Blueprint exs-db896u1srm7s73drqtcg, name thana-korean-free-staging.
+- [x] Render deployment logs confirm /health 200 and / 401.
+- [ ] Direct public HTTPS verification: this machine/browser reports connection
+  closed during TLS, while Render health checks remain successful. No certificate
+  verification was bypassed. Public access and authenticated review remain unverified.
 - [ ] Verify HTTPS review and app sign-in with synthetic data.
 - [ ] Check Android/iPhone audio, microphone and PWA install.
 
@@ -33,8 +38,8 @@ app administrator password, distinct from the reviewer gate. Free has no Shell.
 gate and file permissions were rehearsed with temporary synthetic data. Real
 Gunicorn restart smoke checks passed. Runtime identity survives process restart
 only while the data directory remains; Render Free does not guarantee this.
-Docker was not built because no engine is installed. Actual Render runtime and
-online provisioning are not yet verified.
+Docker was not built because no engine is installed. Render Python 3.11 dependencies installed and Gunicorn started successfully.
+The source was deployed as commit 628f0d44a90fec40caac918a9123a81af49ae534.
 
 Use /api/admin/backup as an authenticated administrator for a private application
 backup before disposable data is lost. Restore only into an empty directory.
@@ -45,3 +50,21 @@ References checked 2026-10-15:
 - https://render.com/docs/blueprint-spec
 - https://render.com/docs/disks
 - https://render.com/docs/python-version
+
+## Online review access
+
+URL: https://thana-korean-stage-demo.onrender.com/
+Dashboard: https://dashboard.render.com/web/srv-db89708m7kps73di7p5g
+Environment: https://dashboard.render.com/web/srv-db89708m7kps73di7p5g/env
+
+First gate: reviewer / THANA_STAGING_PASSWORD from the private Environment page.
+Then /account: admin / THANA_BOOTSTRAP_PASSWORD for the fresh app account.
+Do not share either value in chat. No original learner accounts were migrated.
+The original production service was not edited. A local screenshot records the
+Free plan, branch and Live deployment status (render-free-live.jpg).
+
+Git CLI push failed because the stored credential was rejected. The connected
+GitHub API uploaded sanitized blobs/tree and created a separate commit/branch;
+its tree SHA equals the tested local tree. Local source commits have different
+commit SHAs; main remains at the original commit. Documentation-only revisions
+may follow on the staging branch; application auto deploy is off.
