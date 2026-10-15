@@ -1,8 +1,8 @@
 # THANA KOREAN local web application handoff
 
 This is the current authoritative status; older DEVELOPMENT_STATUS entries are
-incremental history. Completed as a local review build on 2026-10-15. No live
-website, domain, hosting account, external payment or repository push changed.
+incremental history. Completed as a local review build on 2026-10-15. A separate Render Free staging service was deployed on 2026-10-15;
+production/domain and payments were not changed.
 
 ## Implemented
 
@@ -114,5 +114,7 @@ pending. See INTEGRATIONS.md.
 
 Staging preparation: user selected Render Free for a separate disposable demo.
 The Blueprint uses no disk and disables paid providers; reviewer protection and
-a bilingual data-reset notice are implemented. 52 tests pass. Online provisioning
-is pending; see STAGING_RENDER.md. No production service was modified.
+a bilingual data-reset notice are implemented. 52 tests pass. Render reports Live for commit 628f0d4, with health 200 and reviewer gate 401.
+Direct HTTPS access from this machine fails at TLS; authenticated online review
+remains pending. See STAGING_RENDER.md for URL and private login instructions.
+No production service was modified.
