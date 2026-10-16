@@ -20,6 +20,10 @@ def collect_issues(c):
         ko, lo = q.get('choices_ko', []), q.get('choices_lo', [])
         if any(str(v).strip() and (i >= len(lo) or not str(lo[i]).strip()) for i, v in enumerate(ko)):
             issues.append('choices_lo')
+        if q.get('skill')=='listening':
+            audio=q.get('audio','')
+            asset=c.execute("SELECT 1 FROM media_assets WHERE kind='audio' AND published=1 AND filename=?",(audio[len('/media/library/'):] if audio.startswith('/media/library/') else '',)).fetchone()
+            if not asset:issues.append('listening_audio')
         if issues:
             items.append({'kind': 'eps', 'id': str(row['id']), 'title': q.get('stem_ko') or q.get('passage_ko') or ('EPS #' + str(row['id'])), 'issues': issues, 'url': '/question-editor?' + urlencode({'id': row['id']})})
     for row in c.execute('SELECT id,ko,lo,audio_ko,audio_lo FROM vocabulary WHERE published=1 ORDER BY ko,id'):

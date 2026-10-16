@@ -1,6 +1,6 @@
 'use strict';
 const $=id=>document.getElementById(id);
-const labels={unverified:'ຍັງບໍ່ກວດຄຳຕອບ / 정답 미검토',stem_lo:'ຂາດຄຳແປຄຳຖາມ / 질문 라오어 번역 없음',passage_lo:'ຂາດຄຳແປບົດອ່ານ / 지문 라오어 번역 없음',choices_lo:'ຂາດຄຳແປຕົວເລືອກ / 선택지 라오어 번역 없음',audio_ko:'ຂາດສຽງເກົາຫຼີ / 한국어 음성 없음',audio_lo:'ຂາດສຽງລາວ / 라오어 음성 없음'};
+const labels={listening_audio:'ຂາດສຽງຟັງທີ່ເຜີຍແຜ່ / 공개 듣기 음성 없음',unverified:'ຍັງບໍ່ກວດຄຳຕອບ / 정답 미검토',stem_lo:'ຂາດຄຳແປຄຳຖາມ / 질문 라오어 번역 없음',passage_lo:'ຂາດຄຳແປບົດອ່ານ / 지문 라오어 번역 없음',choices_lo:'ຂາດຄຳແປຕົວເລືອກ / 선택지 라오어 번역 없음',audio_ko:'ຂາດສຽງເກົາຫຼີ / 한국어 음성 없음',audio_lo:'ຂາດສຽງລາວ / 라오어 음성 없음'};
 let page=1,pages=1,controller;
 async function load(target=1){
  if(controller)controller.abort();controller=new AbortController();

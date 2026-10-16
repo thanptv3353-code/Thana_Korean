@@ -11,8 +11,8 @@ must remain untouched. Current architecture is the authorized existing Flask app
 |---|---|---|
 | Brand and two learning directions | Home, Korean legacy material, Lao starter, catalogs and shared navigation | Teacher-approved expansion of the Lao and Korean curriculum; full TOPIK material |
 | Course hierarchy and lesson authoring | Courses/modules/ordered blocks, media picker, mixed quizzes, draft/publish/revisions, access and sequential rules | Direct video file upload; drag interaction if needed alongside keyboard controls |
-| EPS practice and analysis | Bank/editor, snapshots, server grading, incorrect retries, complete passage groups, difficulty filter, bilingual answer explanations and private historical review | Listening question authoring/practice/mock support and reviewed audio content; configurable score weighting |
-| Timed exams | Reading mock, server deadline, save/resume, immutable results and category analysis | Listening mode and real-device acceptance |
+| EPS practice and analysis | Bank/editor, snapshots, server grading, incorrect retries, complete passage groups, difficulty filter, bilingual answer explanations and private historical review | Teacher-reviewed listening audio content; configurable score weighting |
+| Timed exams | Reading/listening mocks, separate settings, server deadline, save/resume, immutable results and category analysis | Real-device audio acceptance |
 | Shared vocabulary | CSV preview/deduplication/draft import, examples, images, part of speech, both language audio uploads, saved words and spaced review | Full reviewed vocabulary corpus; native XLSX is optional because the design allows Excel or CSV |
 | Speaking | Word selection, uploaded sample audio, speed control, temporary recording/playback, optional recognition/Korean scoring adapter | Dedicated speaking exercises/levels; real microphone/device evaluation; native audio; validated provider quality. Lao pronunciation scoring is not implemented |
 | Accounts and roles | Username/password, approval, admin/teacher/student checks, recovery, profile, optional Google adapter | Email registration/verification and delivery; course-specific teacher assignment; distinct super-admin role if retained in final scope |
@@ -30,6 +30,8 @@ must remain untouched. Current architecture is the authorized existing Flask app
   speech authoring and CSV metadata import (59 tests).
 - Images must be valid library images; publishing/activating content cannot expose
   a private image. Original imported questions are not silently assigned levels.
+- Listening authoring/practice/mocks, published audio guards, separate settings and
+  saved attempts (66 tests); synthetic browser playback/save/reload/submit passed.
 - Provider tests use mocks; no real AI call or paid resource has been enabled.
 
 Open items above are intentionally not claimed complete. Building an adapter or

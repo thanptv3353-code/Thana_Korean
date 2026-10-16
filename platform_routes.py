@@ -1,6 +1,6 @@
 """Additive platform routes; legacy lessons and account records remain intact."""
 import json, os, secrets, sqlite3, time
-from eps_content import DIFFICULTIES, public_question, explanations
+from eps_content import DIFFICULTIES, SKILLS, public_question, explanations, question_skill, available_questions
 from contextlib import contextmanager
 from flask import jsonify, request, session, render_template
 
@@ -33,9 +33,12 @@ def install(app, legacy):
     def hub(): return render_template('hub.html')
     @app.get('/api/platform/catalog')
     def catalog():
+        skill=request.args.get('skill','reading')
+        if skill not in SKILLS:return jsonify(error='Invalid skill'),400
         with db() as c:
+            bank=available_questions(c,questions,skill)
             lao_available=bool(c.execute("SELECT 1 FROM courses c JOIN course_lessons l ON c.id=l.course WHERE c.language='lo' AND l.published IS NOT NULL LIMIT 1").fetchone())
-        return jsonify(categories=[{'id':k,'count':sum(q['category']==k for q in questions)} for k in sorted({q['category'] for q in questions})], tracks=[{'id':'ko','label':'ຮຽນພາສາເກົາຫຼີ','available':True},{'id':'lo','label':'라오어 배우기','available':lao_available}], user=({'name':legacy['current_user']()['name']} if owner() else None))
+        return jsonify(skill=skill,categories=[{'id':k,'count':sum(q['category']==k for q in bank)} for k in sorted({q['category'] for q in bank})], tracks=[{'id':'ko','label':'ຮຽນພາສາເກົາຫຼີ','available':True},{'id':'lo','label':'라오어 배우기','available':lao_available}], user=({'name':legacy['current_user']()['name']} if owner() else None))
     @app.get('/api/platform/sample')
     def sample():
         ls=legacy['sorted_lessons']()
@@ -45,11 +48,13 @@ def install(app, legacy):
     @app.post('/api/platform/practice')
     def start():
         if not owner(): return jsonify(error='ກະລຸນາເຂົ້າລະບົບ / 로그인해 주세요'),401
-        d=request.get_json(silent=True) or {}; cat=d.get('category'); difficulty=d.get('difficulty','')
+        d=request.get_json(silent=True) or {}; cat=d.get('category'); difficulty=d.get('difficulty','');skill=d.get('skill','reading')
+        if skill not in SKILLS:return jsonify(error='Invalid skill'),400
         if difficulty not in ('', *DIFFICULTIES):return jsonify(error='Invalid difficulty'),400
         if cat not in {q['category'] for q in questions}: return jsonify(error='Invalid category'),400
         # Keep passage groups together; practice has no official exam timer.
-        pool=[q for q in questions if q['category']==cat]
+        with db() as c:eligible=available_questions(c,questions,skill)
+        pool=[q for q in eligible if q['category']==cat]
         import random
         if cat=='reading':
             groups={}
@@ -72,7 +77,7 @@ def install(app, legacy):
         with db() as c:
             c.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?)',(aid,owner(),cat,json.dumps([q['id'] for q in chosen]),None,time.time(),None,None))
             c.execute('INSERT INTO snapshots VALUES (?,?)',(aid,json.dumps(chosen)))
-        return jsonify(id=aid,questions=[public_question(q) for q in chosen])
+        return jsonify(id=aid,skill=skill,questions=[public_question(q) for q in chosen])
     @app.post('/api/platform/practice/<aid>/retry')
     def retry_incorrect(aid):
         if not owner():return jsonify(error='Login required'),401
@@ -91,7 +96,7 @@ def install(app, legacy):
             retry=secrets.token_urlsafe(24)
             c.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?)',(retry,owner(),row['category'],json.dumps([q['id'] for q in chosen]),None,time.time(),None,None))
             c.execute('INSERT INTO snapshots VALUES (?,?)',(retry,json.dumps(chosen)))
-        return jsonify(id=retry,questions=[public_question(q) for q in chosen])
+        return jsonify(id=retry,skill=question_skill(chosen[0]),questions=[public_question(q) for q in chosen])
     @app.post('/api/platform/practice/<aid>')
     def finish(aid):
         if not owner(): return jsonify(error='Login required'),401
@@ -110,7 +115,7 @@ def install(app, legacy):
             detail=[{'id':i,'answer':bank[i]['answer'],'given':answers.get(str(i)),'correct':answers.get(str(i))==bank[i]['answer'],'verified':bank[i].get('verified',False),**explanations(bank[i])} for i in ids]
             score=sum(q['correct'] for q in detail)
             if not row['finished']: c.execute('UPDATE attempts SET answers=?,finished=?,score=? WHERE id=?',(json.dumps(answers),time.time(),score,aid))
-        return jsonify(score=score,total=len(ids),detail=detail)
+        return jsonify(skill=question_skill(bank[ids[0]]) if ids else 'reading',score=score,total=len(ids),detail=detail)
     @app.get('/api/platform/practice/<aid>/result')
     def practice_result(aid):
         if not owner():return jsonify(error='Login required'),401
@@ -122,14 +127,14 @@ def install(app, legacy):
         if not snapshot:return jsonify(error='Original question snapshot unavailable'),409
         qs=json.loads(snapshot['questions']);answers=json.loads(row['answers'])
         detail=[{'id':q['id'],'answer':q['answer'],'given':answers.get(str(q['id'])),'correct':answers.get(str(q['id']))==q['answer'],'verified':q.get('verified',False),**explanations(q)} for q in qs]
-        response=jsonify(score=row['score'],total=len(qs),detail=detail,questions=[public_question(q) for q in qs])
+        response=jsonify(skill=question_skill(qs[0]) if qs else 'reading',score=row['score'],total=len(qs),detail=detail,questions=[public_question(q) for q in qs])
         response.headers['Cache-Control']='no-store'
         return response
     @app.get('/api/platform/history')
     def history():
         if not owner(): return jsonify(error='Login required'),401
-        with db() as c: rows=c.execute('SELECT id,category,created,finished,score,ids FROM attempts WHERE owner=? AND finished IS NOT NULL ORDER BY created DESC LIMIT 20',(owner(),)).fetchall()
-        return jsonify(attempts=[{'id':r['id'],'category':r['category'],'score':r['score'],'total':len(json.loads(r['ids'])),'finished':r['finished']} for r in rows])
+        with db() as c: rows=c.execute('SELECT a.id,a.category,a.created,a.finished,a.score,a.ids,s.questions AS snapshot FROM attempts a LEFT JOIN snapshots s ON s.attempt=a.id WHERE a.owner=? AND a.finished IS NOT NULL ORDER BY a.created DESC LIMIT 20',(owner(),)).fetchall()
+        return jsonify(attempts=[{'id':r['id'],'category':r['category'],'skill':question_skill(json.loads(r['snapshot'])[0]) if r['snapshot'] else 'reading','score':r['score'],'total':len(json.loads(r['ids'])),'finished':r['finished']} for r in rows])
 
     @app.get('/studio')
     def studio():

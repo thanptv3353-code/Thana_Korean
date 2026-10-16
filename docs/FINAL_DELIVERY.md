@@ -28,7 +28,7 @@ production/domain and payments were not changed.
 
 ## Validation
 
-- 59 isolated unit/integration tests pass (Flask, storage, grading, access,
+- 66 isolated unit/integration tests pass (Flask, storage, grading, access,
   deadline, recovery, payments, upload visibility, import, providers with mocked
   HTTP responses, restore validation and traversal rejection).
 - Browser QA used a separate server with a synthetic administrator and synthetic
@@ -163,3 +163,19 @@ editor difficulty/explanation loading and saving were verified.
 
 The extended vision and unfinished work are tracked in PLAN_STATUS.md. This
 batch is local and is not represented as already deployed on Render.
+
+## Listening practice and mock exams (local, pending staging deployment)
+
+Staff can author reading/listening questions and choose published library audio.
+Listening practice and timed mocks have separate catalogs, settings and histories;
+old question IDs and reading defaults are preserved. Native audio controls allow
+replay; this is practice, not a claim of official EPS playback rules. AI provenance
+is derived from stored generation metadata. No real listening corpus is seeded.
+
+The server excludes unavailable audio and incomplete passage groups from new
+selection, preserves snapshots, enforces deadlines and resumes saved attempts.
+66 isolated tests cover mode isolation, audio publication/access, grouping, exact
+size selection, answer privacy, owner checks and immutable results. Synthetic
+browser QA verified authoring, five audio players, real WAV decoding, answer save,
+reload resume and 5/5 submission. The WAV was a test tone, not reviewed speech.
+Real device playback and teacher-reviewed listening material remain pending.
