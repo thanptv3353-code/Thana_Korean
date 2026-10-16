@@ -34,14 +34,17 @@ def install_accounts(app,legacy,db,owner):
         d=request.get_json(silent=True) or {};name=d.get('name');language=d.get('language')
         if not isinstance(name,str) or not 1<=len(name.strip())<=100 or language not in ('lo','ko'):return jsonify(error='Invalid profile'),400
         u=legacy['current_user']();u['name']=name.strip();u['language']=language;legacy['_save'](legacy['USERS_FILE'],legacy['users']);return jsonify(ok=True)
-    def replace_password(u,password):
+    def replace_password(u,password,c):
+        c.execute('UPDATE recovery_tokens SET used=1 WHERE username=?',(u['username'],))
         u['pw']=legacy['hash_pw'](password);u['auth_version']=u.get('auth_version',0)+1;legacy['_save'](legacy['USERS_FILE'],legacy['users'])
     @app.post('/api/platform/account/password')
     @legacy['login_required']
     def change_password():
         d=request.get_json(silent=True) or {};old=d.get('current');password=d.get('password');u=legacy['current_user']()
         if not isinstance(password,str) or not 8<=len(password)<=128 or not legacy['check_pw'](old,u.get('pw')):return jsonify(error='Check current password; new password must have 8–128 characters'),400
-        replace_password(u,password);audit('password_changed',u['username']);session.clear();return jsonify(ok=True)
+        with db() as c:
+            c.execute('BEGIN IMMEDIATE');replace_password(u,password,c)
+        audit('password_changed',u['username']);session.clear();return jsonify(ok=True)
     @app.get('/api/platform/admin/accounts')
     @legacy['admin_required']
     def admin_accounts():return jsonify(users=[{k:u.get(k) for k in ('username','name','role','status')} for u in legacy['users'].values()])
@@ -71,10 +74,21 @@ def install_accounts(app,legacy,db,owner):
             if not r or r['used'] or r['expires']<=time.time():return jsonify(error='Link invalid or expired'),400
             u=legacy['users'].get(r['username'])
             if not u:return jsonify(error='Link invalid or expired'),400
-            replace_password(u,password);c.execute('UPDATE recovery_tokens SET used=1 WHERE hash=?',(r['hash'],))
+            replace_password(u,password,c)
+        audit('password_recovered',u['username'])
         session.clear();return jsonify(ok=True)
     @app.get('/api/platform/admin/audit')
     @legacy['admin_required']
     def audit_list():
-        with db() as c:rows=c.execute('SELECT * FROM audit_log ORDER BY created DESC LIMIT 100').fetchall()
-        return jsonify(events=[dict(r) for r in rows])
+        q=request.args.get('q','').strip()[:200]
+        try:page=int(request.args.get('page','1'))
+        except ValueError:return jsonify(error='Invalid page'),400
+        if not 1<=page<=100000:return jsonify(error='Invalid page'),400
+        # instr treats search text literally, including SQL wildcard characters.
+        where="WHERE instr(lower(COALESCE(actor,'')||' '||action||' '||target),lower(?))>0"
+        with db() as c:
+            total=c.execute('SELECT COUNT(*) FROM audit_log '+where,(q,)).fetchone()[0]
+            rows=c.execute('SELECT * FROM audit_log '+where+' ORDER BY created DESC,id DESC LIMIT 100 OFFSET ?',(q,(page-1)*100)).fetchall()
+        response=jsonify(events=[dict(r) for r in rows],total=total,page=page,page_size=100)
+        response.headers['Cache-Control']='no-store'
+        return response

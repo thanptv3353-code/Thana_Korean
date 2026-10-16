@@ -13,10 +13,14 @@ def install_mock(app, legacy, db, owner, questions):
         c.execute('CREATE TABLE IF NOT EXISTS mock_skill_settings (skill TEXT PRIMARY KEY, count INTEGER, seconds INTEGER, verified_only INTEGER)')
         c.execute("INSERT OR IGNORE INTO mock_skill_settings VALUES ('listening',20,1200,0)")
         c.execute('CREATE TABLE IF NOT EXISTS mock_run_skills (run TEXT PRIMARY KEY, skill TEXT)')
+        c.execute('CREATE TABLE IF NOT EXISTS mock_score_settings (skill TEXT PRIMARY KEY, weights TEXT NOT NULL)')
+        c.execute('CREATE TABLE IF NOT EXISTS mock_run_scoring (run TEXT PRIMARY KEY, weights TEXT NOT NULL)')
     def settings(skill='reading'):
         with db() as c:
-            if skill=='reading':return {**dict(c.execute('SELECT * FROM mock_settings WHERE id=1').fetchone()),'skill':skill}
-            return dict(c.execute('SELECT * FROM mock_skill_settings WHERE skill=?',(skill,)).fetchone())
+            if skill=='reading':cfg={**dict(c.execute('SELECT * FROM mock_settings WHERE id=1').fetchone()),'skill':skill}
+            else:cfg=dict(c.execute('SELECT * FROM mock_skill_settings WHERE skill=?',(skill,)).fetchone())
+            rubric=c.execute('SELECT weights FROM mock_score_settings WHERE skill=?',(skill,)).fetchone()
+            return {**cfg,'weights':json.loads(rubric['weights']) if rubric else {}}
     def pool(skill):
         with db() as c:
             reviews={r['qid']:r for r in c.execute('SELECT * FROM reviews')}
@@ -35,16 +39,18 @@ def install_mock(app, legacy, db, owner, questions):
         return [g for g in chunks.values() if not verified_only or all(q.get('verified') for q in g)]
     def existing_run(c,skill,started):
         return c.execute("SELECT r.id FROM mock_runs r LEFT JOIN mock_run_skills s ON s.run=r.id WHERE r.owner=? AND r.finished IS NULL AND r.deadline>? AND COALESCE(s.skill,'reading')=? LIMIT 1",(owner(),started,skill)).fetchone()
-    def result(row):
+    def result(row,weights):
         qs=json.loads(row['questions']);answers=json.loads(row['answers'])
         detail=[{'id':q['id'],'category':q['category'],'answer':q['answer'],'given':answers.get(str(q['id'])),'correct':answers.get(str(q['id']))==q['answer'],'verified':q.get('verified',False),**explanations(q),'question':public_question(q)} for q in qs]
         categories={}
         for q in detail:
-            group=categories.setdefault(q['category'],{'correct':0,'total':0});group['correct']+=int(q['correct']);group['total']+=1
-        return {'skill':question_skill(qs[0]) if qs else 'reading','score':sum(q['correct'] for q in detail),'total':len(detail),'detail':detail,'categories':categories}
+            points=weights.get(q['category'],1);q['points']=points;q['earned_points']=points if q['correct'] else 0
+            group=categories.setdefault(q['category'],{'correct':0,'total':0,'points':0,'max_points':0});group['correct']+=int(q['correct']);group['total']+=1;group['points']+=q['earned_points'];group['max_points']+=points
+        return {'skill':question_skill(qs[0]) if qs else 'reading','score':sum(q['correct'] for q in detail),'total':len(detail),'detail':detail,'categories':categories,'points':sum(q['earned_points'] for q in detail),'max_points':sum(q['points'] for q in detail),'weights':weights}
     def finalize(c,row):
         if row['finished'] is not None:return json.loads(row['result'])
-        r=result(row);c.execute('UPDATE mock_runs SET finished=?,result=? WHERE id=?',(now(),json.dumps(r),row['id']));return r
+        rubric=c.execute('SELECT weights FROM mock_run_scoring WHERE run=?',(row['id'],)).fetchone()
+        r=result(row,json.loads(rubric['weights']) if rubric else {});c.execute('UPDATE mock_runs SET finished=?,result=? WHERE id=?',(now(),json.dumps(r),row['id']));return r
     def owned(c,aid):return c.execute('SELECT * FROM mock_runs WHERE id=? AND owner=?',(aid,owner())).fetchone()
     @app.get('/mock-exam')
     def mock_page():return render_template('mock.html')
@@ -53,14 +59,18 @@ def install_mock(app, legacy, db, owner, questions):
         skill=request.args.get('skill','reading')
         if skill not in SKILLS:return jsonify(error='Invalid skill'),400
         cfg=settings(skill)
-        return jsonify(settings=cfg,available=sum(len(g) for g in groups(pool(skill),cfg['verified_only'])))
+        bank=pool(skill)
+        return jsonify(settings=cfg,categories=sorted({q['category'] for q in bank}|set(cfg['weights'])),available=sum(len(g) for g in groups(bank,cfg['verified_only'])))
     @app.post('/api/platform/admin/mock/settings')
     @legacy['admin_required']
     def mock_config_save():
         d=request.get_json(silent=True) or {};count=d.get('count');seconds=d.get('seconds');verified=d.get('verified_only');skill=d.get('skill','reading')
         if skill not in SKILLS:return jsonify(error='Invalid skill'),400
         if type(count)!=int or not 5<=count<=60 or type(seconds)!=int or not 60<=seconds<=7200 or type(verified)!=bool:return jsonify(error='Invalid settings'),400
+        weights=d.get('weights')
+        if weights is not None and (type(weights)!=dict or len(weights)>50 or any(type(k)!=str or not k.strip() or len(k)>80 or type(v)!=int or not 1<=v<=100 for k,v in weights.items())):return jsonify(error='Invalid scoring weights'),400
         with db() as c:
+            if weights is not None:c.execute('INSERT OR REPLACE INTO mock_score_settings VALUES (?,?)',(skill,json.dumps(weights)))
             if skill=='reading':c.execute('UPDATE mock_settings SET count=?,seconds=?,verified_only=? WHERE id=1',(count,seconds,int(verified)))
             else:c.execute('UPDATE mock_skill_settings SET count=?,seconds=?,verified_only=? WHERE skill=?',(count,seconds,int(verified),skill))
         return jsonify(ok=True)
@@ -92,6 +102,7 @@ def install_mock(app, legacy, db, owner, questions):
             if existing:return jsonify(id=existing['id'],resumed=True,skill=skill)
             c.execute('INSERT INTO mock_runs VALUES (?,?,?,?,?,?,?,?)',(aid,owner(),json.dumps(chosen), '{}',started+cfg['seconds'],None,None,started))
             c.execute('INSERT INTO mock_run_skills VALUES (?,?)',(aid,skill))
+            c.execute('INSERT INTO mock_run_scoring VALUES (?,?)',(aid,json.dumps(cfg['weights'])))
         return jsonify(id=aid,resumed=False,skill=skill),201
     @app.get('/api/platform/mock/<aid>')
     def mock_state(aid):
@@ -100,7 +111,9 @@ def install_mock(app, legacy, db, owner, questions):
             c.execute('BEGIN IMMEDIATE');row=owned(c,aid)
             if not row:return jsonify(error='Not found'),404
             if row['finished'] is not None or now()>=row['deadline']:return jsonify(finished=True,result=finalize(c,row))
-        return jsonify(id=aid,skill=question_skill(json.loads(row['questions'])[0]),finished=False,remaining=max(0,row['deadline']-now()),answers=json.loads(row['answers']),questions=[public_question(q) for q in json.loads(row['questions'])])
+            rubric=c.execute('SELECT weights FROM mock_run_scoring WHERE run=?',(aid,)).fetchone()
+            weights=json.loads(rubric['weights']) if rubric else {}
+        return jsonify(id=aid,skill=question_skill(json.loads(row['questions'])[0]),finished=False,weights=weights,remaining=max(0,row['deadline']-now()),answers=json.loads(row['answers']),questions=[public_question(q) for q in json.loads(row['questions'])])
     @app.post('/api/platform/mock/<aid>/answer')
     def mock_save_answer(aid):
         if not owner():return jsonify(error='Login required'),401

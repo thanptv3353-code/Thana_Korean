@@ -8,12 +8,16 @@ class ListeningTests(unittest.TestCase):
         self.c=legacy.app.test_client();self.name='listening_'+secrets.token_hex(4);self.ids=[];self.assets=[]
         legacy.users[self.name]={'username':self.name,'name':'Synthetic listening author','role':'admin','status':'approved'};legacy._save(legacy.USERS_FILE,legacy.users)
         with self.c.session_transaction() as s:s['username']=self.name
-        with sqlite3.connect(os.environ['THANA_PLATFORM_DB']) as c:self.cfg=c.execute("SELECT count,seconds,verified_only FROM mock_skill_settings WHERE skill='listening'").fetchone()
+        with sqlite3.connect(os.environ['THANA_PLATFORM_DB']) as c:
+            self.weights=c.execute("SELECT weights FROM mock_score_settings WHERE skill='listening'").fetchone()
+            self.cfg=c.execute("SELECT count,seconds,verified_only FROM mock_skill_settings WHERE skill='listening'").fetchone()
     def tearDown(self):
         with sqlite3.connect(os.environ['THANA_PLATFORM_DB']) as c:
             for qid in self.ids:c.execute('DELETE FROM eps_bank WHERE id=?',(qid,));c.execute('DELETE FROM reviews WHERE qid=?',(qid,))
             for asset in self.assets:c.execute('DELETE FROM generated_audio WHERE asset=?',(asset,));c.execute('DELETE FROM media_assets WHERE id=?',(asset,))
             c.execute("UPDATE mock_skill_settings SET count=?,seconds=?,verified_only=? WHERE skill='listening'",self.cfg)
+            c.execute("DELETE FROM mock_score_settings WHERE skill='listening'")
+            if self.weights:c.execute("INSERT INTO mock_score_settings VALUES ('listening',?)",self.weights)
         legacy.users.pop(self.name,None);legacy._save(legacy.USERS_FILE,legacy.users)
     def post(self,path,body):
         token=self.c.get('/api/csrf').json['token'];return self.c.post(path,json=body,headers={'X-CSRF-Token':token})
@@ -115,3 +119,35 @@ class ListeningTests(unittest.TestCase):
         legacy.users[self.name]['role']='teacher';legacy._save(legacy.USERS_FILE,legacy.users)
         self.assertEqual(self.post('/api/platform/admin/mock/settings',{'skill':'listening','count':5,'seconds':60,'verified_only':False}).status_code,403)
         self.assertEqual(self.c.get('/api/platform/mock/settings?skill=invalid').status_code,400)
+
+    def test_weighted_scoring_snapshot_and_history(self):
+        asset=self.audio();qs=[self.question(asset['url'],category='qa' if i<3 else 'blank') for i in range(5)]
+        cfg={'skill':'listening','count':5,'seconds':60,'verified_only':True,'weights':{'qa':4,'blank':2}}
+        self.assertEqual(self.post('/api/platform/admin/mock/settings',cfg).status_code,200)
+        reading=self.c.get('/api/platform/mock/settings').json['settings']['weights']
+        aid=self.post('/api/platform/mock',{'skill':'listening'}).json['id'];base='/api/platform/mock/'+aid
+        self.assertEqual(self.c.get(base).json['weights'],cfg['weights'])
+        # Edits after starting must not change the saved scoring rubric.
+        self.post('/api/platform/admin/mock/settings',{**cfg,'weights':{'qa':100}})
+        for q in qs[:4]:self.assertEqual(self.post(base+'/answer',{'id':q['id'],'choice':1}).status_code,200)
+        result=self.post(base+'/finish',{}).json['result']
+        self.assertEqual((result['score'],result['total'],result['points'],result['max_points']),(4,5,14,16))
+        self.assertEqual(result['categories']['qa']['points'],12)
+        self.assertEqual(result['categories']['blank']['max_points'],4)
+        self.assertEqual(self.post(base+'/finish',{}).json['result'],result)
+        self.assertEqual(self.c.get(base).json['result'],result)
+        self.assertEqual(next(a['result'] for a in self.c.get('/api/platform/mock/history').json['attempts'] if a['id']==aid),result)
+        self.assertEqual(self.c.get('/api/platform/mock/settings').json['settings']['weights'],reading)
+        # Old clients omitting weights preserve the saved configuration.
+        self.configure();self.assertEqual(self.c.get('/api/platform/mock/settings?skill=listening').json['settings']['weights'],{'qa':100})
+
+    def test_invalid_weights_and_legacy_run_defaults(self):
+        cfg={'skill':'listening','count':5,'seconds':60,'verified_only':True}
+        for weights in ([],{'qa':0},{'qa':101},{'qa':True},{'qa':1.5},{'':2},{'x'*81:1},{str(i):1 for i in range(51)}):
+            self.assertEqual(self.post('/api/platform/admin/mock/settings',{**cfg,'weights':weights}).status_code,400)
+        asset=self.audio();[self.question(asset['url']) for _ in range(5)];self.configure()
+        aid=self.post('/api/platform/mock',{'skill':'listening'}).json['id'];base='/api/platform/mock/'+aid
+        with sqlite3.connect(os.environ['THANA_PLATFORM_DB']) as c:c.execute('DELETE FROM mock_run_scoring WHERE run=?',(aid,))
+        self.assertEqual(self.c.get(base).json['weights'],{})
+        result=self.post(base+'/finish',{}).json['result']
+        self.assertEqual((result['points'],result['max_points']),(0,5))

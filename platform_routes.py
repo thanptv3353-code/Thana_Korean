@@ -194,3 +194,21 @@ def install(app, legacy):
 
     from readiness_routes import install_readiness
     install_readiness(app, legacy, db)
+
+    from audit_routes import install_audit
+    install_audit(app, legacy, db)
+
+    from speaking_routes import install_speaking
+    install_speaking(app, legacy, db, owner)
+
+    from teacher_routes import install_teachers
+    install_teachers(app, legacy, db)
+
+    from analysis_routes import install_analysis
+    install_analysis(app, legacy, db, owner)
+
+    from site_settings_routes import install_site_settings
+    install_site_settings(app, legacy, db)
+
+    from email_routes import install_email
+    install_email(app, legacy, db)

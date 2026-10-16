@@ -13,8 +13,8 @@ async function load(){try{
  const lessons=new Map();if(catalog.status==='fulfilled')for(const c of catalog.value.courses)for(const l of c.lessons)lessons.set(c.legacy?'legacy:'+l.id:l.id,{title:l.title,url:c.legacy?'/learn?lesson='+encodeURIComponent(l.id):'/courses?language='+c.language+'&lesson='+encodeURIComponent(l.id)});
  $('completed').innerHTML=p.completed.length?p.completed.map(id=>{const l=lessons.get(id);return l?`<a href="${esc(l.url)}">✓ ${esc(l.title)}</a>`:'<p>✓ ບົດຮຽນທີ່ບໍ່ເຜີຍແຜ່ໃນປັດຈຸບັນ / 현재 비공개 수업</p>';}).join(''):empty;
  const failure='ບໍ່ສາມາດໂຫຼດສ່ວນນີ້ ລອງໂຫຼດໜ້າຄືນ / 새로고침 후 다시 시도하세요';
- $('practice').innerHTML=practice.status==='fulfilled'?(practice.value.attempts.length?practice.value.attempts.map(a=>`<article>${esc(a.category)} · <strong>${esc(a.score)} / ${esc(a.total)}</strong> · ${esc(date(a.finished))}</article>`).join(''):empty):failure;
- $('exams').innerHTML=mock.status==='fulfilled'?(mock.value.attempts.length?mock.value.attempts.map(a=>`<article><strong>${esc(a.result.score)} / ${esc(a.result.total)}</strong> · ${esc(date(a.finished))}</article>`).join(''):empty):failure;
+ $('practice').innerHTML=practice.status==='fulfilled'?(practice.value.attempts.length?practice.value.attempts.map(a=>`<article>${a.skill==='listening'?'ຟັງ / 듣기':'ອ່ານ / 읽기'} · ${esc(a.category)} · <strong>${esc(a.score)} / ${esc(a.total)}</strong> · ${esc(date(a.finished))}</article>`).join(''):empty):failure;
+ $('exams').innerHTML=mock.status==='fulfilled'?(mock.value.attempts.length?mock.value.attempts.map(a=>`<article>${a.skill==='listening'?'ຟັງ / 듣기':'ອ່ານ / 읽기'} · <strong>${esc(a.result.points??a.result.score)} / ${esc(a.result.max_points??a.result.total)} ຄະແນນ / 점</strong> · ${esc(a.result.score)}/${esc(a.result.total)} ຂໍ້ຖືກ / 정답 · ${esc(date(a.finished))}</article>`).join(''):empty):failure;
  $('content').hidden=false;$('message').textContent='';
  }catch(e){$('message').textContent=e.status===401?'ກະລຸນາເຂົ້າລະບົບເພື່ອເບິ່ງຜົນການຮຽນ / 로그인하여 학습 현황을 확인하세요':e.message;$('signIn').hidden=e.status!==401;}}
 load();

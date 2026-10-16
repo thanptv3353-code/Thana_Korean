@@ -1,5 +1,6 @@
-"""Reusable image/audio assets for structured lessons."""
+"""Reusable image/audio/video assets for structured lessons."""
 import io,os,secrets,wave,re
+from video_media import clean_video
 from PIL import Image,UnidentifiedImageError
 from flask import jsonify,request,send_from_directory,render_template,redirect
 
@@ -38,7 +39,11 @@ def install_media(app,legacy,db,owner):
                 ext='wav';kind='audio'
             except (wave.Error,EOFError,ValueError):pass
         if not ext and (raw[:3]==b'ID3' or (len(raw)>2 and raw[0]==255 and raw[1]&224==224)):ext='mp3';kind='audio'
-        if not ext:return jsonify(error='PNG/JPEG/MP3/WAV only'),400
+        if not ext and raw[4:8]==b'ftyp':
+            try:raw=clean_video(raw);ext='mp4';kind='video'
+            except BlockingIOError:return jsonify(error='Another video is being checked; retry shortly'),429
+            except ValueError as e:return jsonify(error=str(e)),400
+        if not ext:return jsonify(error='PNG/JPEG/MP3/WAV or H.264 MP4 only'),400
         name=secrets.token_hex(16)+'.'+ext;mid=secrets.token_urlsafe(12)
         with open(os.path.join(directory,name),'xb') as f:f.write(raw)
         with db() as c:c.execute('INSERT INTO media_assets VALUES (?,?,?,?,0)',(mid,title or 'Media',name,kind))
@@ -56,9 +61,9 @@ def install_media(app,legacy,db,owner):
         return jsonify(ok=True)
     @app.get('/media/library/<name>')
     def library_file(name):
-        if not re.fullmatch(r'[0-9a-f]{32}\.(jpg|wav|mp3)',name):return jsonify(error='Not found'),404
+        if not re.fullmatch(r'[0-9a-f]{32}\.(jpg|wav|mp3|mp4)',name):return jsonify(error='Not found'),404
         with db() as c:r=c.execute('SELECT published FROM media_assets WHERE filename=?',(name,)).fetchone()
         u=legacy['current_user']();staff=u and u.get('status')=='approved' and u.get('role') in ('admin','teacher')
         if not r or (not r['published'] and not staff):return jsonify(error='Not found'),404
-        mime={'jpg':'image/jpeg','wav':'audio/wav','mp3':'audio/mpeg'}[name.rsplit('.',1)[1]]
+        mime={'jpg':'image/jpeg','wav':'audio/wav','mp3':'audio/mpeg','mp4':'video/mp4'}[name.rsplit('.',1)[1]]
         response=send_from_directory(directory,name,mimetype=mime);response.headers['X-Content-Type-Options']='nosniff';return response

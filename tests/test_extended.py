@@ -42,3 +42,14 @@ class ExtendedTests(unittest.TestCase):
   self.role('admin');self.assertEqual(self.post('/api/platform/admin/payments/'+aid,{'status':'approved','note':'Test'}).status_code,200)
   self.assertEqual(self.post('/api/platform/admin/payments/'+aid,{'status':'approved'}).status_code,409)
   self.role('student');self.assertEqual(self.c.get('/api/platform/lessons/'+lid).status_code,200)
+
+ def test_password_change_revokes_outstanding_recovery(self):
+  issued=self.post('/api/platform/admin/accounts/'+self.name+'/recovery',{}).json['link'].split('=')[1]
+  with sqlite3.connect(legacy.os.environ['THANA_PLATFORM_DB']) as c:
+   digest=legacy.hashlib.sha256(issued.encode()).hexdigest()
+   self.assertEqual(c.execute('SELECT used FROM recovery_tokens WHERE hash=?',(digest,)).fetchone()[0],0)
+  self.assertEqual(self.post('/api/platform/account/password',{'current':'wrong','password':'replacement-123'}).status_code,400)
+  with sqlite3.connect(legacy.os.environ['THANA_PLATFORM_DB']) as c:self.assertEqual(c.execute('SELECT used FROM recovery_tokens WHERE hash=?',(digest,)).fetchone()[0],0)
+  self.assertEqual(self.post('/api/platform/account/password',{'current':'test-password-123','password':'replacement-123'}).status_code,200)
+  self.assertEqual(self.post('/api/platform/account/recover',{'token':issued,'password':'should-never-apply'}).status_code,400)
+  self.assertTrue(legacy.check_pw('replacement-123',legacy.users[self.name]['pw']))

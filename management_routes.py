@@ -1,4 +1,5 @@
 """Role-aware management overview and private reporting."""
+from course_permissions import course_scope
 from datetime import datetime,timedelta,timezone
 from flask import jsonify,render_template,redirect
 
@@ -15,6 +16,12 @@ def install_management(app,legacy,db,owner):
         with db() as c:
             counts={name:c.execute('SELECT COUNT(*) FROM '+table).fetchone()[0] for name,table in [('courses','courses'),('lessons','course_lessons'),('words','vocabulary'),('mock_exams','mock_runs')]}
             counts['draft_lessons']=c.execute('SELECT COUNT(*) FROM course_lessons WHERE published IS NULL').fetchone()[0]
+            scope=course_scope(c,u)
+            if scope is not None:
+                rows=c.execute('SELECT id,course,published FROM course_lessons').fetchall()
+                counts['courses']=len(scope)
+                counts['lessons']=sum(r['course'] in scope for r in rows)
+                counts['draft_lessons']=sum(r['course'] in scope and r['published'] is None for r in rows)
             counts['pending_words']=c.execute('SELECT COUNT(*) FROM vocabulary WHERE published=0').fetchone()[0]
             if u['role']=='admin':counts['pending_payments']=c.execute("SELECT COUNT(*) FROM payment_requests WHERE status='pending'").fetchone()[0]
         counts['legacy_lessons']=len(legacy['lessons'])

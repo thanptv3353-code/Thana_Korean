@@ -11,7 +11,7 @@ def restore(archive,output,apply=False):
         if len(names)!=len(set(names)):raise ValueError('Duplicate archive names')
         if sum(i.file_size for i in z.infolist())>256*1024*1024:raise ValueError('Archive exceeds 256 MB')
         for info in z.infolist():
-            allowed=info.filename in ('users.json','lessons.json','progress.json','manifest.json','platform.sqlite3') or re.fullmatch(r'(media|receipts)/[0-9a-f]{32}\.(mp3|wav|jpg|png)',info.filename)
+            allowed=info.filename in ('users.json','lessons.json','progress.json','manifest.json','platform.sqlite3') or re.fullmatch(r'(media|receipts)/[0-9a-f]{32}\.(mp3|wav|jpg|png)',info.filename) or re.fullmatch(r'media/[0-9a-f]{32}\.mp4',info.filename)
             if not allowed or (info.external_attr>>16)&0o170000==0o120000:raise ValueError('Unexpected or unsafe archive path')
         for name,kind in [('users.json',dict),('lessons.json',list),('progress.json',dict)]:
             if name not in names or not isinstance(json.loads(z.read(name)),kind):raise ValueError('Invalid legacy backup schema')

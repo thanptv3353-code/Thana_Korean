@@ -95,3 +95,12 @@ Android/iPhone audio and install checks are separate device acceptance; provider
 microphone scoring remains disabled and is not part of Free demo provisioning.
 Production cutover, durable storage, live providers and curriculum expansion
 remain future work; this acceptance does not claim they are completed.
+
+## Listening release — 2026-10-16
+
+User authorized redeployment with no staging data to preserve. Source b623171
+(tree d2d67ff, local d13b274) includes the readiness queue, EPS explanations,
+dictionary metadata and listening authoring/practice/mocks. Deployment
+dep-db8nth6q1p3s738omssg built successfully; gunicorn started, health returned
+200 and the reviewer gate returned 401. No public-browser acceptance of this
+new version is claimed from the restricted in-app browser.

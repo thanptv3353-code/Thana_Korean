@@ -16,7 +16,7 @@ production/domain and payments were not changed.
 | Learning | Optional sequential unlocking, course search, per-course completion bars, continue/next lesson and deep links, completion, unified legacy/new XP, level and activity streak in UTC+7 |
 | EPS | Practice, incorrect-answer snapshot retries, complete-passage grouping, editable bank, archival, verification, timed reading mock, deadline enforcement, answer autosave/resume, result/history/category analysis |
 | Vocabulary | Bilingual search, examples, categories, CSV preview/import/duplicates, per-language audio, self-rated spaced review, private saved-word lists and saved-only review |
-| Assets | Reusable image/audio library, image re-encoding, draft/public visibility, protected uploads |
+| Assets | Reusable image/audio/short-MP4 library, image re-encoding, draft/public visibility, protected uploads |
 | Accounts | Existing password login and approvals, profile, 8–128-character new passwords, versioned PBKDF2, session invalidation on password change, login attempt limiting, single-use admin-assisted recovery |
 | Administration | Role-aware dashboard, weekly activity, searchable accounts with status filters, account roles/status, content/media/question tools and account audit events |
 | Premium | Configurable manual price/instructions, private receipts, review, one-time entitlement grant, server-side premium course checks |
@@ -28,7 +28,7 @@ production/domain and payments were not changed.
 
 ## Validation
 
-- 66 isolated unit/integration tests pass (Flask, storage, grading, access,
+- 100 isolated unit/integration tests pass (Flask, storage, grading, access,
   deadline, recovery, payments, upload visibility, import, providers with mocked
   HTTP responses, restore validation and traversal rejection).
 - Browser QA used a separate server with a synthetic administrator and synthetic
@@ -77,8 +77,10 @@ in the initial vision is finished:
   are not implemented or tested.
 - The Lao course contains three introductory authored lessons, not an entire
   approved curriculum. EPS imported translations/answers require teacher review.
-- Teachers are trusted content staff across the content library. Course-specific
-  teacher assignments are not implemented. Only administrators manage accounts,
+- Teachers share dictionaries, media, EPS and speaking authoring. Administrators
+  may restrict structured course access using teacher assignments. Existing
+  teachers keep broad course access until restriction is explicitly configured.
+  Only administrators manage accounts,
   receipts, payment settings and entitlements.
 - Manual receipt verification is implemented; automatic bank gateways, refunds,
   full accounting and automatic recurring billing are not.
@@ -86,8 +88,9 @@ in the initial vision is finished:
   download and native Android/iOS store builds are not included.
 - Self-service email recovery and email delivery are not configured. Recovery is
   staff-assisted, with a 30-minute single-use link.
-- Audit logging covers account/recovery activity and lesson revisions; it is not
-  a comprehensive immutable audit of every endpoint.
+- Audit logging covers account/recovery activity, lesson revisions and the listed
+  content mutations. It is not immutable and cannot be treated as an independent
+  security ledger; logging occurs after the content transaction commits.
 - MP3 validates headers rather than decoding every file. Device microphone,
   permission/codec behavior and real mobile install flows need testing.
 - Docker deployment is prepared but not built/run here. The old Render YAML is
@@ -134,9 +137,9 @@ remote audio availability or pronunciation. It never edits content automatically
 54 tests pass, including role denial, review precedence, exclusions, missing
 translations/audio and pagination. JavaScript syntax checks pass. Isolated browser
 QA with a synthetic teacher verified report rendering, search, empty state and
-EPS editor deep link. This addition is local; the Render build is still 628f0d4.
+EPS editor deep link. This addition is included in staging release b623171.
 
-## EPS explanations and dictionary metadata (local)
+## EPS explanations and dictionary metadata
 
 Teachers can assign EPS difficulty and Korean/Lao explanations. Practice filters
 by assigned level; reading passage groups are retained whole. Explanations and
@@ -162,9 +165,9 @@ bilingual explanations, and history reopened the original explanations. Question
 editor difficulty/explanation loading and saving were verified.
 
 The extended vision and unfinished work are tracked in PLAN_STATUS.md. This
-batch is local and is not represented as already deployed on Render.
+batch is included in staging release b623171.
 
-## Listening practice and mock exams (local, pending staging deployment)
+## Listening practice and mock exams
 
 Staff can author reading/listening questions and choose published library audio.
 Listening practice and timed mocks have separate catalogs, settings and histories;
@@ -179,3 +182,219 @@ size selection, answer privacy, owner checks and immutable results. Synthetic
 browser QA verified authoring, five audio players, real WAV decoding, answer save,
 reload resume and 5/5 submission. The WAV was a test tone, not reviewed speech.
 Real device playback and teacher-reviewed listening material remain pending.
+
+2026-10-16 staging update: manually deployed source b623171 on the existing Free
+service (deployment dep-db8nth6q1p3s738omssg). Build and startup logs report live,
+health 200 and unauthenticated root 401. No production service was changed.
+
+## Configurable mock scoring (local, not yet deployed)
+
+Administrators can set 1–100 points per correct answer by category, independently
+for reading and listening. Unspecified categories default to one point. Wrong or
+unanswered questions earn zero. The rubric is snapshotted when an attempt starts;
+later edits do not change active or completed attempts. Results and history show
+weighted points alongside raw correct counts; existing results retain compatibility.
+Old clients that omit weights preserve the saved rubric. This is custom practice
+scoring, not an official EPS pass threshold or weighting claim.
+
+68 isolated tests pass. Added checks cover mixed-category totals, immutable
+scoring after settings edits, invalid weights, legacy attempts and history. Browser
+QA used synthetic admin/audio/questions: save 2/4-point categories, start, answer
+four of five and submit → 14/16 points, 4/5 correct. A 320px result viewport had no
+horizontal overflow. The full extracted release and JavaScript checks also pass.
+
+## Content administration audit (local, not yet deployed)
+
+Successful course/lesson, vocabulary/import/audio, EPS bank/review, mock settings,
+media/TTS review, moderation, membership settings/payment review and legacy lesson
+mutations now record actor, action, item IDs and timestamp. Read-only import
+previews, rejected requests and learner actions are excluded. Request bodies,
+query strings, credentials, audio and receipt contents are never copied.
+
+Administrators can search the audit by actor/action/target, refresh and page
+through 100 entries at a time. Teachers can generate content events but cannot
+read the administrator log. The endpoint uses no-store. This is metadata history,
+not a before/after diff or tamper-proof ledger. A failed audit write emits an
+operator error after the content commit; it cannot roll that commit back.
+
+71 isolated tests cover safe metadata, rejected/preview exclusions, staff/read
+roles, literal search and pagination. JavaScript and extracted release checks pass.
+
+Synthetic browser QA verified audit rendering, actor search, empty results, refresh
+and a 320px viewport without horizontal overflow.
+
+## Dedicated speaking exercises (local, not yet deployed)
+
+Teachers and administrators can author Korean/Lao prompts with title, translation,
+beginner/intermediate/advanced level and library sample audio at /speaking-studio.
+Publication requires public audio; withdrawing an audio asset hides the exercise
+from new learner selection. AI sample provenance comes from stored metadata.
+The existing speaking area filters exercises by language/level and loads their
+reference text, translation and sample into listening/recording controls.
+
+Learners may explicitly mark a prompt practiced. This is owner-scoped self-report,
+not pronunciation scoring, mastery or proof of recording. No audio is uploaded
+for this action. A changed exercise revision requires a fresh practice report;
+repeated reports on one revision preserve the original time. Author updates reject
+stale revisions. Speaking authoring participates in content mutation audit.
+
+74 isolated tests pass. Synthetic browser QA created/published a prompt, selected
+it in the learner view, saved a self-report and confirmed its persisted checkmark
+after reload. A 320px viewport had no horizontal overflow. Test sample is silence;
+no microphone permission, real speech quality or real provider result is claimed.
+Teacher-approved exercise content and physical device recording remain pending.
+
+## Teacher course assignment (local, not yet deployed)
+
+Administrators configure /teacher-assignments: broad access (the preserved default)
+or only selected structured courses. Restricted teachers cannot create new
+courses; an administrator must create and assign them. An empty restricted list
+allows no course authoring. The server filters draft/answer-bearing course lists
+and denies unassigned lesson creation/save/publish/unpublish, sequence changes
+and revision/history access, even by direct API. Course dashboard counts follow
+the configured scope. Assigned staff preview access does not grant preview access
+to other premium courses; normal learner entitlement/prerequisite checks apply.
+
+Assignments are read on every request; role/status rejection still overrides
+them. Dictionaries, EPS, media and speaking exercises remain shared staff tools.
+No actual teacher permissions were changed: QA used isolated synthetic accounts.
+77 tests pass, including cross-course denial, revision privacy, revocation, empty
+scope, broad default compatibility, admin-only assignment, atomic validation and
+premium non-bypass. Browser verified assignment save/reload and 320px layout.
+
+## Personal EPS analysis (local, not yet deployed)
+
+/learning-analysis aggregates completed practice and mock exposures by skill,
+category and mode over 7/30/90/365 days, ordered by lowest raw correct-answer
+percentage. It shows unanswered and unverified counts and links back to the
+selected reading/listening practice mode. Repeated attempts count again; these
+are observed answer rates, not independent unique-question or language mastery
+scores. Weighted exam points are deliberately separate from correctness rates.
+Legacy practice without snapshots is excluded and counted in a coverage notice;
+unfinished attempts are excluded. Stored snapshots/results determine statistics,
+not the current question bank. The no-store API scopes all queries to the signed-in
+approved account and returns no answer keys, prompt text or other learners' data.
+
+79 isolated tests pass, covering exposure totals, repeats, periods, missing
+snapshots, unfinished exclusion and cross-account privacy. Synthetic browser
+verified reading/listening groups (2/4 total), period selection and listening
+practice navigation. A 320px viewport had no horizontal overflow. My Learning
+now labels both skills and displays weighted mock points with raw correct counts.
+
+## Account recovery and media cache corrections (local)
+
+Successful password replacement now marks all outstanding recovery tokens for the
+account used, for both authenticated password changes and recovery. A failed
+current-password check leaves a valid recovery link unchanged. Successful recovery
+adds a token-free account audit event. All /media/ responses now use no-store,
+including draft/public/range responses and access-denied responses. Requests
+continue to check current publication and account role before serving bytes.
+This header governs new responses; it cannot retract files already downloaded.
+
+81 tests pass. Regression checks demonstrate outstanding link rejection after
+password change, unchanged credentials after attempted reuse, draft access denial,
+published audio responses, revoked audio with conditional request headers, and
+staff range-response cache headers. All tests use synthetic accounts/runtime.
+
+## Speaking recording lifecycle corrections (local)
+
+A recording captures its language/reference when recording starts. Prompt/language
+changes clear old playback, provider consent and previous analysis; controls stay
+locked while microphone access/recording/stop is pending. Cancellation ignores
+late permission and recorder events and releases audio tracks, including pagehide.
+A provider submission captures its blob/reference before asynchronous conversion
+and ignores stale results after cancellation. Samples/device synthesis pause when
+recording starts. Auto-stop is 30 seconds, matching the configured speech endpoint.
+
+82 tests pass, including a synthetic Node recorder lifecycle suite: immutable
+prompt context, late permission cancellation, late stop/data suppression, replacing
+a recording, auto-stop, denied permission and recorder failure. This uses fake
+media objects, not a physical microphone. Browser verified page startup and Lao
+language switching without console errors; no microphone permission was requested.
+Physical-device recording/codec evaluation remains pending.
+
+## Direct MP4 lesson clips (local, not yet deployed)
+
+Staff can upload H.264 MP4 with optional AAC audio (10 MB, 5 minutes, at most
+1920×1080 pixels). imageio-ffmpeg 0.6.0 supplies the local FFmpeg dependency.
+Validation uses local file/pipe protocols, bounded timeouts, one concurrent video
+check and one decoder thread. The clip is remuxed with global metadata removed
+and faststart enabled, then fully decoded before storing it as private draft
+media. No external upload, remote URL fetch or paid provider is used.
+
+The media studio, course media picker, editor preview and learner view support
+native MP4 controls alongside existing YouTube blocks. Publishing a lesson requires
+its video asset to be published. Shared library publication makes the media URL
+public; this is not a private paid-video streaming service. Draft serving and
+withdrawal retain staff/publication checks and no-store, including range requests.
+Private backups include MP4; validated restore accepts MP4 only in media paths.
+
+87 tests pass, covering actual generated H.264/AAC decoding, metadata removal,
+upload/draft/publication, kind mismatch, withdrawal, range delivery, timeout
+recovery, learner role denial and backup restoration. Isolated browser loaded a
+synthetic blue clip with duration 1s, 64×64, readyState 4 and no media error.
+320px overflow check passed. Physical-device playback and Linux/Render execution
+of the new dependency remain unverified. No real lesson video was used.
+
+## Adjacent lesson navigation (local)
+
+Structured lessons now show previous/next controls in a stable position. They
+follow adjacent catalog order within one course, retain server-provided locks,
+and permit revisiting completed lessons. The first/last boundary is explicit.
+Deep links select the actual course language and retain it in the URL.
+Leaving a lesson pauses native media and clears embedded video sources.
+Late lesson loads and completion responses are guarded from replacing a newer
+lesson view; completed progress still refreshes the catalog.
+
+88 tests pass. Added Node checks cover first/middle/last boundaries, locked flags,
+legacy exclusion, missing IDs and course separation. Existing server tests retain
+prerequisite/membership enforcement. Synthetic browser verified locked next →
+completion → unlock, next/previous traversal, correct language from a deep link
+and disabled final-course boundary. 320px overflow check passed.
+
+## Homepage settings (local)
+
+Administrators can edit Lao/Korean homepage headings, subtitles and an optional
+public help link at /site-settings. Brand identity remains THANA KOREAN. Settings
+are plain text, escaped into HTML attributes/content and switched via textContent.
+Help links accept HTTPS without embedded credentials or a simple local page path;
+blank hides the link. Public copy is explicitly labeled as public in the editor.
+
+One additive SQLite record stores settings and revision. Saves reject stale
+revisions and unknown fields; restoring defaults first loads an unsaved draft.
+Changes are recorded by the content audit. Server secrets/provider flags are
+not exposed or editable through this form. Existing defaults remain unchanged
+unless an administrator saves a new value.
+
+91 tests pass, including role denial, safe rendering, invalid URL/field rejection,
+stale-save protection and audit metadata. Synthetic browser saved bilingual copy
+and a local help link, verified public Lao/Korean switching and 320px layout.
+No real homepage settings, production or remote source were changed.
+
+## Optional email registration and verification (local)
+
+/email-account supports username + email registration, private queued verification
+messages, password-confirmed one-time links (30 minutes) and rate-limited resend.
+New accounts remain students pending administrator approval. Both verification
+and approval are required for these accounts to log in; legacy username signup
+remains available. No email-based account merging or automatic role grants occur.
+Links bind to account password version; replacement invalidates old verification.
+Email-required accounts remain blocked if their platform email row is missing.
+Deleting a student clears its email record/challenges and pending message body.
+
+Email registration is disabled unless explicit server SMTP/origin configuration
+is valid. Web requests only queue messages; scripts/deliver_email.py is the
+explicit delivery worker. It requires verified STARTTLS/587 or TLS/465, leases
+jobs, retries with backoff and clears recipient/body after delivery or expiry.
+The private outbox temporarily contains verification links: keep its SQLite DB
+and backups private. Source packages contain neither queue nor credentials.
+ASCII email addresses are supported; users still log in with their username.
+Self-service email password recovery is not added by this registration feature.
+
+100 tests pass, including verification/approval separation, replay/expiry, resend,
+rate limits, normalized uniqueness, password-version binding, account deletion,
+mocked SMTP delivery/retry/scrubbing and STARTTLS/TLS context validation. Synthetic
+browser verified form validation, explicit confirmation with a fixed test token,
+fragment removal, same-page new-link handling and 320px layout. No real email
+was sent. Live SMTP delivery, worker scheduling and provider acceptance are pending.
+Also corrected /hub to use the same homepage settings context as /.

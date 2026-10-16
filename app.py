@@ -248,7 +248,7 @@ def response_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'same-origin'
     response.headers['Content-Security-Policy'] = "object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
-    if request.path.startswith('/api/'):
+    if request.path.startswith(('/api/', '/media/')):
         response.headers['Cache-Control'] = 'no-store'
     return response
 
@@ -319,6 +319,8 @@ def login():
     u = users.get(uname)
     if not u or not check_pw(pw, u['pw']):
         return jsonify(error='ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ'), 401
+    email_check=app.config.get('THANA_EMAIL_LOGIN_ALLOWED')
+    if email_check and not email_check(uname):return jsonify(error='ກະລຸນາຢືນຢັນອີເມວ / 이메일을 먼저 확인해 주세요'),403
     if u['status'] != 'approved':
         return jsonify(error='ບັນຊີຂອງທ່ານຍັງບໍ່ໄດ້ຮັບການອະນຸມັດ'), 403
     session['username'] = uname

@@ -94,3 +94,31 @@ Keys and enabled flags are not configured by this implementation. Backup already
 includes platform metadata and generated media; source packages exclude them.
 
 Reference: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech
+
+## Optional email registration / SMTP worker
+
+Default: disabled. To enable the implemented username + email registration flow,
+set THANA_EMAIL_ENABLED=1, THANA_PUBLIC_URL to the actual HTTPS origin (no path),
+THANA_EMAIL_FROM, THANA_SMTP_HOST, THANA_SMTP_PORT (587 or 465),
+THANA_SMTP_USERNAME and THANA_SMTP_PASSWORD privately on the server.
+No credentials belong in web settings, source or chat. Registration remains
+separate from administrator approval and login continues to use username.
+
+Web requests enqueue verification mail in the private platform database; they do
+not send SMTP. Run `python scripts/deliver_email.py --limit 20` in the configured
+server environment with THANA_PLATFORM_DB set to its initialized private DB.
+An operator must arrange worker execution; no Render cron/paid service was created.
+The worker requires certificate-verified TLS (465) or STARTTLS (587), leases jobs
+and retries up to five attempts with backoff. Delivery is at least once.
+Delivered/expired/terminally failed message recipient/body fields are cleared.
+
+Pending outbox bodies contain temporary verification links and are private backup
+data. Do not export the queue or publish its SQLite file. Verification links are
+short-lived, one use, require the registration password and bind to password
+version. Resending invalidates older links. No real SMTP delivery was performed;
+transport tests used mocks, and browser confirmation used synthetic account data.
+Verify actual inbox/spam behavior and worker operation before enabling for users.
+This feature does not implement self-service email password recovery.
+
+Disabling the email flag stops new email signup/resend; it does not bypass the
+verification requirement for accounts already registered through this flow.
