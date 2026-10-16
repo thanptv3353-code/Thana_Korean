@@ -8,7 +8,7 @@ from flask import request
 # when new account/provider routes are introduced.
 CONTENT_ACTIONS = {
     'site_settings_save', 'teacher_assignments_save', 'speaking_save', 'create_course', 'create_course_lesson', 'save_course_lesson',
-    'course_sequence', 'course_premium', 'save_word', 'import_words',
+    'course_order_save', 'course_level_save', 'course_sequence', 'course_premium', 'save_word', 'import_words',
     'upload_word_audio', 'bank_save', 'review_question', 'mock_config_save',
     'media_upload', 'media_publish', 'generate_audio', 'review_generated_audio',
     'moderate_post', 'plan_update', 'payment_review',

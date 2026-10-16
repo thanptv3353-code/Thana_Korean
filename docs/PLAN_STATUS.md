@@ -10,10 +10,10 @@ must remain untouched. Current architecture is the authorized existing Flask app
 | Plan area | Implemented evidence | Remaining work / acceptance |
 |---|---|---|
 | Brand and two learning directions | Home, Korean legacy material, Lao starter, catalogs and shared navigation | Teacher-approved expansion of the Lao and Korean curriculum; full TOPIK material |
-| Course hierarchy and lesson authoring | Courses/modules/ordered blocks, media picker, mixed quizzes, draft/publish/revisions, access and sequential rules, bounded direct MP4 clips and native preview/player, adjacent previous/next controls | Device playback acceptance; drag interaction if needed alongside keyboard controls |
+| Course hierarchy and lesson authoring | Courses/modules/ordered blocks, optional lesson objectives, media picker, mixed quizzes, draft/publish/revisions, access and sequential rules, bounded direct MP4 clips and native preview/player, adjacent previous/next controls, staff-assigned course levels and learner level filter | Physical-device playback and touch-drag acceptance |
 | EPS practice and analysis | Bank/editor, snapshots, server grading, incorrect retries, complete passage groups, difficulty filter, bilingual answer explanations and private historical review; configurable category points with immutable run rubrics; owner-only multi-attempt analysis by category/skill/period | Teacher-reviewed listening audio content |
 | Timed exams | Reading/listening mocks, separate settings, server deadline, save/resume, immutable results and category analysis | Real-device audio acceptance |
-| Shared vocabulary | CSV preview/deduplication/draft import, examples, images, part of speech, both language audio uploads, saved words and spaced review | Full reviewed vocabulary corpus; native XLSX is optional because the design allows Excel or CSV |
+| Shared vocabulary | CSV preview/deduplication/draft import, examples, images, part of speech, both language audio uploads, saved words and spaced review, reusable lesson word references | Full reviewed vocabulary corpus; native XLSX is optional because the design allows Excel or CSV |
 | Speaking | Word selection, uploaded sample audio, speed control, temporary recording/playback, optional recognition/Korean scoring adapter, teacher-authored exercises/levels and revision-aware self-report | Teacher-reviewed exercise content; real microphone/device evaluation; native audio; validated provider quality. Lao pronunciation scoring is not implemented |
 | Accounts and roles | Username/password, approval, admin/teacher/student checks, recovery, profile, optional Google adapter, administrator-configured teacher course scope, optional email registration/verification and private SMTP outbox worker | Live SMTP/worker acceptance; self-service email password recovery; distinct super-admin role if retained in final scope |
 | Motivation and personal summary | XP, level, UTC+7 streak, progress, continue/next and owner-scoped summary | User feedback/acceptance on actual courses |
@@ -52,6 +52,19 @@ must remain untouched. Current architecture is the authorized existing Flask app
   text escaping (91 tests); synthetic browser verified both language versions.
 - Optional email registration/verification, private queued SMTP delivery and
   password/version/approval enforcement (100 tests); live delivery remains pending.
+- Course levels with preserved unspecified defaults, scoped revision-protected
+  editing and combined catalog filter (102 tests); synthetic browser verified
+  persistence, combined filters/empty results and 320px layout.
+- Whole-course draft ordering with revision guards, history and scoped access;
+  keyboard buttons/browser persistence verified (104 tests). Public order changes
+  only when lessons are individually published.
+- Explicit pointer drag handles replace inconclusive HTML5 row dragging; browser
+  drag and reload persistence verified (105 tests), including cancellation guards.
+- Shared published dictionary words can be inserted into lesson blocks by ID,
+  with live public resolution and withdrawal guards (108 tests); synthetic
+  browser verified picker, preview, publication and learner rendering.
+- Optional lesson objectives in draft/publication/history with plain-text learner
+  display (110 tests); synthetic browser verified authoring and published view.
 - Provider tests use mocks; no real AI call or paid resource has been enabled.
 
 Open items above are intentionally not claimed complete. Building an adapter or

@@ -41,6 +41,13 @@ def install_vocabulary(app,legacy,db,owner):
         with db() as c:rows=c.execute('SELECT * FROM vocabulary WHERE published=1 AND (instr(lower(ko),lower(?))>0 OR instr(lo,?)>0)'+saved_filter+' ORDER BY ko LIMIT 100',params).fetchall()
         with db() as c:result=[{**dict(r),**details(c,r['id'])} for r in rows]
         return jsonify(words=result)
+    @app.get('/api/platform/vocabulary/<wid>')
+    def public_word_detail(wid):
+        from lesson_vocabulary import public_word
+        with db() as c:word=public_word(c,wid)
+        if not word:return jsonify(error='Word not published'),404
+        return jsonify(word=word)
+
     @app.get('/api/platform/admin/vocabulary')
     @legacy['content_required']
     def admin_words():

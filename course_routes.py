@@ -1,5 +1,6 @@
 """Structured bilingual courses with draft/published snapshots and durable progress."""
-import json, secrets, time
+import json, secrets, time, re
+from lesson_vocabulary import public_word
 import quiz_engine
 from course_permissions import course_scope, may_manage
 from datetime import datetime, timezone, timedelta
@@ -11,6 +12,7 @@ def install_courses(app, legacy, db, owner):
         c.execute('CREATE TABLE IF NOT EXISTS courses (id TEXT PRIMARY KEY, title TEXT, language TEXT, instruction TEXT, description TEXT)')
         c.execute('CREATE TABLE IF NOT EXISTS course_lessons (id TEXT PRIMARY KEY, course TEXT, draft TEXT, published TEXT, revision INTEGER, updated REAL)')
         c.execute('CREATE TABLE IF NOT EXISTS course_progress (owner TEXT, lesson TEXT, score INTEGER, completed REAL, PRIMARY KEY(owner,lesson))')
+        c.execute('CREATE TABLE IF NOT EXISTS course_levels (course TEXT PRIMARY KEY, level TEXT NOT NULL, revision INTEGER NOT NULL)')
         c.execute('CREATE TABLE IF NOT EXISTS course_rules (course TEXT PRIMARY KEY, sequential INTEGER)')
         c.execute('CREATE TABLE IF NOT EXISTS lesson_revisions (lesson TEXT, revision INTEGER, content TEXT, actor TEXT, created REAL, PRIMARY KEY(lesson,revision))')
         c.execute('CREATE TABLE IF NOT EXISTS teacher_course_scopes (username TEXT PRIMARY KEY,restricted INTEGER NOT NULL)')
@@ -18,11 +20,13 @@ def install_courses(app, legacy, db, owner):
     def valid_content(d):
         if not isinstance(d,dict) or not isinstance(d.get('title'),str) or not d['title'].strip() or len(d['title'])>200: return False
         if not isinstance(d.get('module',''),str) or (type(d.get('order',1)) is not int or d.get('order',1)<1): return False
+        if not isinstance(d.get('objectives',''),str) or len(d.get('objectives',''))>2000:return False
         blocks=d.get('blocks',[]); quiz=d.get('quiz',[])
         if not isinstance(blocks,list) or len(blocks)>100 or not isinstance(quiz,list) or len(quiz)>50:return False
         for b in blocks:
-            if not isinstance(b,dict) or b.get('type') not in ('text','audio','image','video') or not isinstance(b.get('value'),str):return False
+            if not isinstance(b,dict) or b.get('type') not in ('text','audio','image','video','vocabulary') or not isinstance(b.get('value'),str):return False
             if len(b['value'])>20000:return False
+            if b['type']=='vocabulary' and not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',b['value']):return False
             if b['type'] in ('audio','image'):
                 u=urlparse(b['value'])
                 if not ((u.scheme=='https' and u.netloc and not u.username) or (not u.scheme and (b['value'].startswith('/static/') or b['value'].startswith('/media/audio/') or b['value'].startswith('/media/library/')) and not b['value'].startswith('//'))):return False
@@ -36,6 +40,8 @@ def install_courses(app, legacy, db, owner):
     def public(d):
         d=json.loads(json.dumps(d));d['quiz']=[quiz_engine.public(q) for q in d.get('quiz',[])]
         for b in d.get('blocks',[]):
+            if b['type']=='vocabulary':
+                with db() as c:b['word']=public_word(c,b['value'])
             if b['type']=='video' and not b['value'].startswith('/media/library/'):b['embed_url']='https://www.youtube.com/embed/'+legacy['extract_youtube_id'](b['value'])
             if b['type']=='audio' and b['value'].startswith('/media/library/'):
                 with db() as c:generated=c.execute('SELECT g.voice FROM generated_audio g JOIN media_assets m ON m.id=g.asset WHERE m.filename=?',(b['value'].split('/')[-1],)).fetchone()
@@ -68,7 +74,7 @@ def install_courses(app, legacy, db, owner):
     @app.get('/api/platform/courses')
     def courses_list():
         with db() as c:
-            rows=c.execute('SELECT * FROM courses ORDER BY title').fetchall()
+            rows=c.execute('SELECT courses.*, COALESCE(course_levels.level,\'\') AS level, COALESCE(course_levels.revision,0) AS level_revision FROM courses LEFT JOIN course_levels ON course_levels.course=courses.id ORDER BY title').fetchall()
             result=[]
             for r in rows:
                 lessons=[]
@@ -77,7 +83,7 @@ def install_courses(app, legacy, db, owner):
                 if lessons:result.append({**dict(r),'premium':bool(c.execute('SELECT 1 FROM premium_courses WHERE course=?',(r['id'],)).fetchone()),'lessons':sorted(lessons,key=lambda l:(l['order'],l['id']))})
         old=legacy['sorted_lessons']()
         if old:
-            result.insert(0,{'id':'legacy-ko','title':'ພາສາເກົາຫຼີ / 한국어','language':'ko','instruction':'lo','description':'ບົດຮຽນເກົ່າທີ່ຮັກສາໄວ້ / 기존 강좌','legacy':True,'lessons':[{'id':l['id'],'title':l['title_lo'],'module':l.get('title_ko',''),'order':l['order']} for l in old]})
+            result.insert(0,{'id':'legacy-ko','title':'ພາສາເກົາຫຼີ / 한국어','language':'ko','instruction':'lo','description':'ບົດຮຽນເກົ່າທີ່ຮັກສາໄວ້ / 기존 강좌','legacy':True,'level':'','lessons':[{'id':l['id'],'title':l['title_lo'],'module':l.get('title_ko',''),'order':l['order']} for l in old]})
         return jsonify(courses=result)
     @app.get('/api/platform/lessons/<lid>')
     def course_lesson(lid):
@@ -119,6 +125,50 @@ def install_courses(app, legacy, db, owner):
         while day in dates:streak+=1;day-=timedelta(days=1)
         completed=[r['lesson'] for r in rows]+['legacy:'+lid for lid in old_completed]
         return jsonify(completed=completed,xp=len(completed)*20,streak=streak,level=1+len(completed)//5)
+    @app.post('/api/platform/admin/courses/<cid>/order')
+    @legacy['content_required']
+    def course_order_save(cid):
+        d=request.get_json(silent=True)
+        if not isinstance(d,dict) or set(d)!={'lessons'} or not isinstance(d['lessons'],list) or len(d['lessons'])>1000:
+            return jsonify(error='Invalid lesson order'),400
+        items=d['lessons']
+        if any(not isinstance(i,dict) or set(i)!={'id','revision'} or not isinstance(i['id'],str) or type(i['revision']) is not int or i['revision']<1 for i in items):
+            return jsonify(error='Invalid lesson order'),400
+        ids=[i['id'] for i in items]
+        if len(ids)!=len(set(ids)):return jsonify(error='Duplicate lesson'),400
+        with db() as c:
+            c.execute('BEGIN IMMEDIATE')
+            if not c.execute('SELECT 1 FROM courses WHERE id=?',(cid,)).fetchone():return jsonify(error='Not found'),404
+            if not may_manage(c,legacy['current_user'](),cid):return jsonify(error='Course not assigned'),403
+            rows={r['id']:r for r in c.execute('SELECT id,draft,revision FROM course_lessons WHERE course=?',(cid,))}
+            if set(ids)!=set(rows) or any(i['revision']!=rows[i['id']]['revision'] for i in items):
+                return jsonify(error='Lesson list changed; reload before reordering'),409
+            changed=0
+            for position,item in enumerate(items,1):
+                row=rows[item['id']];content=json.loads(row['draft'])
+                if content.get('order',1)==position:continue
+                content['order']=position;revision=row['revision']+1;payload=json.dumps(content,ensure_ascii=False);now=time.time()
+                c.execute('UPDATE course_lessons SET draft=?,revision=?,updated=? WHERE id=?',(payload,revision,now,item['id']))
+                c.execute('INSERT INTO lesson_revisions VALUES (?,?,?,?,?)',(item['id'],revision,payload,owner(),now))
+                changed+=1
+        return jsonify(ok=True,changed=changed)
+
+    @app.post('/api/platform/admin/courses/<cid>/level')
+    @legacy['content_required']
+    def course_level_save(cid):
+        d=request.get_json(silent=True)
+        if not isinstance(d,dict) or set(d)!={'level','revision'} or not isinstance(d.get('level'),str) or d['level'] not in ('','beginner','intermediate','advanced','eps-topik') or type(d.get('revision')) is not int or d['revision']<0:
+            return jsonify(error='Invalid course level'),400
+        with db() as c:
+            c.execute('BEGIN IMMEDIATE')
+            if not c.execute('SELECT 1 FROM courses WHERE id=?',(cid,)).fetchone():return jsonify(error='Not found'),404
+            if not may_manage(c,legacy['current_user'](),cid):return jsonify(error='Course not assigned'),403
+            row=c.execute('SELECT revision FROM course_levels WHERE course=?',(cid,)).fetchone()
+            revision=row['revision'] if row else 0
+            if revision!=d['revision']:return jsonify(error='Course level changed; reload before saving'),409
+            c.execute('INSERT INTO course_levels VALUES (?,?,?) ON CONFLICT(course) DO UPDATE SET level=excluded.level,revision=excluded.revision',(cid,d['level'],revision+1))
+        return jsonify(ok=True,level=d['level'],revision=revision+1)
+
     @app.post('/api/platform/admin/courses/<cid>/sequence')
     @legacy['content_required']
     def course_sequence(cid):
@@ -133,7 +183,7 @@ def install_courses(app, legacy, db, owner):
     @legacy['content_required']
     def admin_course_list():
         with db() as c:
-            courses=[dict(r) for r in c.execute('SELECT courses.*, EXISTS(SELECT 1 FROM premium_courses WHERE course=courses.id) AS premium, COALESCE((SELECT sequential FROM course_rules WHERE course=courses.id),0) AS sequential FROM courses ORDER BY title')]
+            courses=[dict(r) for r in c.execute('SELECT courses.*, COALESCE((SELECT level FROM course_levels WHERE course=courses.id),\'\') AS level, COALESCE((SELECT revision FROM course_levels WHERE course=courses.id),0) AS level_revision, EXISTS(SELECT 1 FROM premium_courses WHERE course=courses.id) AS premium, COALESCE((SELECT sequential FROM course_rules WHERE course=courses.id),0) AS sequential FROM courses ORDER BY title')]
             lessons=[{'id':r['id'],'course':r['course'],'draft':json.loads(r['draft']),'revision':r['revision'],'published':bool(r['published'])} for r in c.execute('SELECT * FROM course_lessons')]
             scope=course_scope(c,legacy['current_user']())
             if scope is not None:
@@ -194,6 +244,7 @@ def install_courses(app, legacy, db, owner):
             if type(revision)!=int or revision!=row['revision']:return jsonify(error='ມີການແກ້ໄຂໃໝ່. ໂຫຼດຄືນກ່ອນ / 다른 변경이 있습니다. 새로고침하세요.'),409
             if action=='publish':
                 for block in content.get('blocks',[]):
+                    if block['type']=='vocabulary' and not public_word(c,block['value']):return jsonify(error='Publish the referenced vocabulary first'),400
                     if block['value'].startswith('/media/library/'):
                         filename=block['value'].split('/')[-1]
                         asset=c.execute('SELECT published FROM media_assets WHERE filename=?',(filename,)).fetchone()

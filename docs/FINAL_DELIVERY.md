@@ -1,5 +1,19 @@
 # THANA KOREAN local web application handoff
 
+## Latest source synchronization — 2026-10-16
+
+After explicit user authorization, sanitized source from local commit 64e8445
+was uploaded to GitHub branch codex/staging-review-20261015 as commit
+fe1eca20c6ec9ca21b8b828ed112f5d0a1fe95ca. The remote commit and branch ref
+were read back; its complete tree matches the tested local tree
+791f590165d44dd6726e2f121abb5cf6ac8b4772. Runtime accounts, databases,
+credentials, receipts, uploaded media and backups were excluded. The existing
+100-test release validation applies to this source snapshot.
+
+This records source upload only. Render deployment remains b623171; the newer
+features described below as local have not yet been verified on Render.
+Production and the main branch were not changed.
+
 This is the current authoritative status; older DEVELOPMENT_STATUS entries are
 incremental history. Completed as a local review build on 2026-10-15. A separate Render Free staging service was deployed on 2026-10-15;
 production/domain and payments were not changed.
@@ -28,7 +42,7 @@ production/domain and payments were not changed.
 
 ## Validation
 
-- 100 isolated unit/integration tests pass (Flask, storage, grading, access,
+- 110 isolated unit/integration tests pass (Flask, storage, grading, access,
   deadline, recovery, payments, upload visibility, import, providers with mocked
   HTTP responses, restore validation and traversal rejection).
 - Browser QA used a separate server with a synthetic administrator and synthetic
@@ -398,3 +412,116 @@ browser verified form validation, explicit confirmation with a fixed test token,
 fragment removal, same-page new-link handling and 320px layout. No real email
 was sent. Live SMTP delivery, worker scheduling and provider acceptance are pending.
 Also corrected /hub to use the same homepage settings context as /.
+
+
+## Course levels and catalog filtering (local, not yet uploaded)
+
+The editor can assign beginner/intermediate/advanced/EPS-TOPIK or unspecified
+level to each structured course. Existing structured and legacy courses remain
+unspecified until a teacher classifies them; no source lesson/question IDs change.
+An additive course_levels table retains the five-column courses schema and
+idempotent initialization. Learners see bilingual level labels and can combine
+the level filter with language and text search. Levels describe the course;
+they do not certify learner proficiency or alter membership/prerequisite access.
+
+The staff endpoint checks current course assignment and role, validates its exact
+payload and rejects stale revisions. Successful updates enter the content audit.
+102 isolated tests pass, including default compatibility, all level transitions,
+public/admin readback, stale-save denial, audit events, malformed payloads and
+restricted/unassigned/student/anonymous mutation denial. The extracted release
+also passes fresh bootstrap, seeding twice, SQLite integrity, HTTP smoke and all
+static JavaScript syntax checks. Isolated browser QA saved a synthetic course
+level, reloaded to confirm persistence, and verified beginner/advanced filters
+combined with text search and empty results. The learner catalog had no horizontal
+overflow at 320px. Evidence: docs/course-level-preview.png (local screenshot,
+excluded from the source bundle). No real course classification was changed.
+
+
+## Draft lesson list reordering (local)
+
+The editor offers draggable lesson rows and accessible up/down buttons. A whole
+course order request includes every lesson ID and current revision. The server
+checks staff assignment, rejects missing/duplicate/foreign IDs and stale lists,
+and applies changed draft positions/history revisions in one SQLite transaction.
+Published snapshots, question IDs, lesson IDs and completion records are preserved.
+Teachers review and publish each lesson separately to apply its new order publicly;
+partial publication can temporarily produce equal public positions (stable ID tie
+ordering still applies). This is not an atomic whole-course publish action.
+
+Filtering disables reorder controls; unsaved lesson edits block reordering.
+Pending requests lock course switching and lesson editing. Successful requests
+record course-level mutation metadata in the content audit. Existing lesson
+revision history retains content before each changed position.
+
+104 isolated tests pass. New tests cover atomic draft-only changes, unchanged
+published order/content, history revisions, no-op behavior, stale-list rejection,
+malformed/duplicate/incomplete/foreign IDs and current teacher/student/anonymous
+permissions. Full extracted release checks and static JavaScript syntax pass.
+Synthetic browser verified up/down persistence after reload, filtered disabled
+controls, unsaved-edit protection and 320px layout with no horizontal overflow.
+The initial HTML5 row drag attempt was inconclusive and has been replaced by
+explicit pointer handles (see acceptance below). Earlier screenshot evidence is
+local at docs/course-order-preview.png and excluded from source bundles.
+
+
+## Pointer lesson drag acceptance (local)
+
+The ↕ button now captures pointer input explicitly, handles cancellation/lost
+capture, ignores secondary pointers/buttons and requires movement before dropping.
+A click alone never changes order. Dropping outside the current list or onto the
+same lesson does nothing. Filter/dirty/pending checks run again at release.
+Keyboard up/down controls and server revision/assignment checks remain in place.
+
+105 tests pass, including synthetic Node pointer lifecycle tests for successful
+movement, cancellation, lost capture, no movement, blocked starts/releases,
+secondary pointer/button rejection and outside/same-target drops. Full extracted
+release and JavaScript checks pass. Browser pointer drag moved the first synthetic
+lesson into the third position, and reload retained the new order. Console had
+no errors and 320px layout had no horizontal overflow. Evidence is local at
+docs/course-drag-preview.png (excluded from source packages). Touch hardware,
+auto-scroll beyond the viewport and physical-device acceptance were not tested.
+
+
+## Reusable lesson vocabulary (local, not yet uploaded)
+
+Teachers can search the published shared dictionary inside the block editor and
+insert a word reference, then preview and publish the lesson. The lesson keeps
+the existing vocabulary ID rather than duplicating its translation/examples.
+Editor and learner cards display current Korean/Lao text, part of speech,
+examples and available image/audio. Shared dictionary edits therefore affect
+all lessons referring to that word; this is explicitly described in the picker.
+Word references are live, unlike the lesson's text/quiz publication snapshot.
+
+Publication rejects missing/unpublished words. Public lesson payloads resolve
+only the currently published word and overwrite any client-supplied copied word
+payload. A withdrawn/deleted word becomes an unavailable notice, never draft
+text; a missing/withdrawn library image is omitted. Media URLs continue through
+their existing access checks. Shared words are public dictionary content even
+when referenced by a premium lesson; the course itself retains its membership
+and prerequisite checks. Existing lesson/question/word IDs remain unchanged.
+
+108 isolated tests pass, including reference validation, current updates,
+withdrawal/deletion, ignored injected copies, draft save versus publish guards,
+missing-image omission and premium course denial. Extracted release verification
+and JavaScript syntax pass. Synthetic browser selected a shared word, previewed,
+published and viewed its bilingual card/examples as a learner; 320px layout had
+no horizontal overflow. No real curriculum was edited. Screenshot evidence is
+local at docs/lesson-vocabulary-preview.png and excluded from source bundles.
+
+
+## Lesson learning objectives (local)
+
+Structured lesson authoring now includes optional learning objectives, limited to
+2000 characters by the server and editor. Preview and learner view display plain
+text before the main lesson blocks. Blank/older lessons hide the section.
+Objectives are part of the existing draft/published JSON and revision snapshots;
+saving a new draft does not change published objectives. No database migration
+or original source lesson modification is needed.
+
+110 isolated tests pass. Coverage includes bilingual multiline objectives,
+draft/publication separation, historical snapshots, old content without the field,
+type/length rejection and the 2000-character boundary. Full extracted release
+and JavaScript syntax checks pass. Synthetic browser authored and published
+bilingual objectives and confirmed they appear before learner content. Screenshot
+evidence is local at docs/lesson-objectives-preview.png, excluded from bundles.
+Teacher-reviewed objectives for actual courses remain content work.
