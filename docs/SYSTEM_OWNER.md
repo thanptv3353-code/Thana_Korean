@@ -63,4 +63,4 @@ bootstrap flag leaving existing administrators unchanged. Synthetic browser
 verified hidden system controls and disabled role fields for ordinary Admin,
 then visible system controls for Super Admin. 320px layout had no overflow.
 No actual user account was promoted or demoted; activation remains an operator
-step. Neither this feature nor later local batches are deployed on staging.
+step. Role separation is included in staging a5ec247 (137-test release). Actual owner activation is still pending; the initial-owner flag remains off. Later speaking fixes through local dc219a6 are not deployed.

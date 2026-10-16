@@ -2,21 +2,29 @@
 
 ## Latest source synchronization — 2026-10-16
 
-After explicit user authorization, the exact source of local d4d94b9 was uploaded
-to codex/staging-review-20261015 as GitHub commit
-c82e5da7dd8a4bacf2214e43b2378db1ca75f3d1. Remote commit/ref readback and local
-Git tree comparison both confirm c5ddc83207377b197e823cb009252a8a5b8ba600.
-No runtime accounts, databases, credentials, receipts, uploads or backups were sent.
+After explicit source-upload and disposable-reset authorization, local release
+b78bbae7791fef0f4f690c67ebeb1c2ff1423d21 was uploaded to
+codex/staging-review-20261015 as GitHub a5ec247ff03e604c9623fb77974cb708e60bc4fc.
+Remote commit/ref readback confirms tree 098133d18fa44314b45112640e349f7c350b8081,
+identical to the tested local source. No runtime accounts, credentials, databases,
+receipts, uploads or backups were sent. Original Desktop/local migration-input
+users.json, lessons.json and progress.json still match byte-for-byte.
 
-Render Free deployment dep-db8suj49v7es73dp2sgg completed on 2026-10-16:
-Dashboard reports Deploy succeeded | Live (58.6 seconds), startup logs show
-/health 200 and unauthenticated root/HEAD 401. This is the 110-test approved
-release including course levels, pointer reorder, shared words and objectives.
-All subsequent features, including per-question media, quiz metadata, resume,
-lesson access overrides, the shared question bank, Super Admin separation, guest
-trial and learning-direction navigation remain local (137 tests), not deployed. Public-page/end-user re-acceptance of this release is pending;
-control-plane health is not a substitute for full browser workflow acceptance.
-Production/main/domain were not changed and no paid resource was purchased.
+Render Free deployment dep-db94kgvbtjjs73955rqg succeeded on 2026-10-16 at
+23:02 GMT+7 (1m07s), source a5ec247. Dashboard shows Deploy succeeded | Live;
+startup logs show repeated /health 200 and anonymous root 401. The deployed
+137-test release includes media/quiz metadata, home resume, per-lesson access,
+shared mixed-format bank, compatible Super Admin separation, guest trial,
+learning-direction preferences, drag auto-scroll, learner module sections and
+course title/description editing. Evidence: docs/render-137-live.png (local only).
+User now reports access works; full lesson/mobile re-acceptance remains pending; control-plane health does not prove
+all authenticated workflows. Actual Super Admin activation and optional paid
+providers were not enabled. Production/main/domain and the Free plan are unchanged.
+
+Feature sections below describe local implementation/QA at their original dates;
+all source through b78bbae is now in the above staging release. Later delivery
+status documentation and the speaking navigation/lifecycle and Lao draft pack updates (141-test local build)
+remain local until the next authorized synchronization.
 
 This is the current authoritative status; older DEVELOPMENT_STATUS entries are
 incremental history. Completed as a local review build on 2026-10-15. A separate Render Free staging service was deployed on 2026-10-15;
@@ -24,7 +32,7 @@ production/domain and payments were not changed.
 
 ## Requirement audit
 
-See REQUIREMENTS_AUDIT.md for the original-plan comparison. The 137-test local build is not the complete vision: Super Admin activation,
+See REQUIREMENTS_AUDIT.md for the original-plan comparison. The 141-test local build is not the complete vision: Super Admin activation,
 full language-navigation acceptance and external/content gates
 remain unverified. See SYSTEM_OWNER.md for the implemented role separation.
 
@@ -52,7 +60,7 @@ remain unverified. See SYSTEM_OWNER.md for the implemented role separation.
 
 ## Validation
 
-- 137 isolated unit/integration tests pass (Flask, storage, grading, access,
+- 141 isolated unit/integration tests pass (Flask, storage, grading, access,
   deadline, recovery, payments, upload visibility, import, providers with mocked
   HTTP responses, restore validation and traversal rejection).
 - Browser QA used a separate server with a synthetic administrator and synthetic
@@ -85,6 +93,11 @@ remain unverified. See SYSTEM_OWNER.md for the implemented role separation.
   local legacy application's bytes. Source folders on Desktop were not edited.
 
 ## Boundaries and pending external work
+
+PENDING_SETUP.md lists the current release identities, ordered acceptance gates,
+existing evidence and the exact external input needed. No actual owner account,
+provider configuration, teacher approval or production cutover has been inferred
+from passing synthetic tests. The staging acceptance question remains pending.
 
 This is the implemented local Web App scope, not a claim that every future item
 in the initial vision is finished:
@@ -793,3 +806,66 @@ Synthetic browser verified unsaved switch rejection, save/reload of bilingual
 text, literal angle-bracket title rendering in the catalog and 320px editor layout.
 Evidence: docs/course-metadata-preview.png (local, source-excluded). This changes
 structured course details only; original Desktop sources remain untouched.
+
+
+## Speaking prompt navigation (local, after 137-test staging release)
+
+Learners can move backward/forward through the currently loaded words or filtered
+speaking exercises. Placeholder/disabled options are skipped, endpoints do not
+wrap, and navigation is disabled during recording/requesting/stopping. Changes
+use the same selection events as manual choices, canceling the previous recording,
+clearing its playback/provider consent and stopping old sample/device speech.
+Language/level reload immediately clears the prior exercise queue and audio so
+stale choices cannot be stepped through while the new list loads. Nothing marks
+practice complete automatically or creates a pronunciation score.
+
+138 isolated tests, full extracted-source and JS checks pass. Navigation tests
+cover first/last/empty/filtered choices, busy state and normal selection events.
+Synthetic browser stepped two Korean words and two exercises, verified the final
+Next disabled, previous selection, an empty advanced filter, removed old sample
+audio and a Lao word. 320px speaking page had no horizontal overflow. No actual
+microphone/provider was used. Evidence: docs/speaking-navigation-preview.png
+(local, excluded from source bundles). Real microphone/device quality is pending.
+
+
+## Speaking exit/hidden-page cleanup (local, not deployed)
+
+Leaving the speaking view through the homepage menus, hiding the document or
+pagehide cancels pending/active capture, stops tracks and sample/playback/device
+speech, and discards temporary recorded audio/consent. Returning to the speaking
+view does not resume capture. Cleanup events are bound only after navigation
+controls initialize, so non-speaking initial hashes are safe. Custom text clears
+the previously selected word as well as the exercise selection.
+
+139 isolated tests, full extracted release and JS checks pass. Synthetic lifecycle
+tests route each actual event type through SpeakingRecorder for both pending
+permission and active recording, verifying track release, suppressed late results
+and listener removal; visible/still-speaking events leave capture alone. Browser
+checked initial #courses, speaking→courses→speaking, custom selector reset, idle
+controls/hidden playback on return and no console errors. No real microphone or
+provider was used. Evidence: docs/speaking-lifecycle-preview.png (local only).
+Real mobile backgrounding/microphone behavior and latest staging acceptance are
+still pending; this evidence does not establish device/provider accuracy.
+
+
+## Lao beginner practice draft pack (local, not deployed)
+
+Six Korean-instruction lessons with objectives, explanations and 18 mixed quizzes
+cover numbers 1–10, existing school/book/company/water words and courtesy/review.
+This is a limited practice expansion, not the full Lao alphabet/grammar/curriculum.
+All contain a teacher-review notice and no audio or pronunciation scoring. See
+LAO_DRAFT_PACK.md for references, limitations and the review/import steps.
+
+Approved Admin/Super Admin can explicitly import from the editor. Stable IDs and
+an atomic idempotent import preserve existing metadata, drafts/publications,
+revisions and levels; foreign-course/language collisions reject without partial
+writes. Normal startup does not import the pack. Six drafts were added to the
+actual local runtime as local-authoring, with zero published lessons. No original
+Desktop source, live staging data or real account role was modified.
+
+141 isolated tests, extracted release and JS checks pass, including draft privacy,
+validation/CSRF/roles, repeat import, teacher edit preservation, quiz validation and
+collision rollback. Synthetic browser checked six drafts, first lesson preview,
+second import adding zero, and 320px layout. Screenshot:
+docs/lao-draft-pack-preview.png (local/source-excluded). User says access works;
+this confirms access only, not every curriculum/admin/physical-device workflow.

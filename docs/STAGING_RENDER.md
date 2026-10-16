@@ -4,6 +4,20 @@ User selected Free on 2026-10-15. A separate Free service deployed successfully 
 The existing thana-korean service (srv-d9argmjeo5us73dfbf4g) uses main,
 commit a7fc75d. Do not modify or sync its Blueprint.
 
+## Current release — 2026-10-16
+
+User approved deploying b78bbae and losing disposable test data. GitHub source
+is a5ec247ff03e604c9623fb77974cb708e60bc4fc, tree
+098133d18fa44314b45112640e349f7c350b8081, exactly matching local b78bbae.
+Deployment dep-db94kgvbtjjs73955rqg reports Deploy succeeded | Live after 1m07s,
+started 23:01:07 GMT+7 and Live 23:02:15. Logs show repeated /health 200 and
+anonymous root 401. 137 isolated tests, clean extracted source and JS checks
+passed before upload. No credentials/runtime files were uploaded; original
+Desktop inputs still compare byte-for-byte. Evidence: docs/render-137-live.png.
+End-user acceptance of this latest release remains pending. Super Admin owner
+activation, live external providers and production cutover were not performed.
+Earlier release records below are historical evidence, not the current version.
+
 ## Selected configuration
 
 Use render.staging.yaml from a separate staging branch in a NEW Blueprint.

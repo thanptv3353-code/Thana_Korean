@@ -21,7 +21,7 @@ must remain untouched. Current architecture is the authorized existing Flask app
 | Administration | Central dashboard, content/user/media/question tools, account audit, trend, moderation, content readiness queue, searchable content mutation metadata, bilingual homepage/help-link settings | Private live-service configuration remains external; before/after audit diffs and independent tamper-resistant logging remain future |
 | Data preservation and migration | Original JSON preserved, transactional SQLite, isolated backup/restore, preserved IDs | Actual production backup/reconciliation and migration rehearsal with the live data, before cutover |
 | Mobile web and apps | Responsive pages, manifest/icons and safe offline notice | Physical Android/iPhone install/audio tests; full offline lesson downloads and native stores are later phases |
-| Hosting/release | Separate Render Free staging, user confirmed health + reviewer/admin sign-in | Approved 110-test source c82e5da deployed (exact local d4d94b9 tree); later features through learning-direction navigation and drag auto-scroll local only. Free deploys reset ephemeral files. Durable production storage still requires a decision |
+| Hosting/release | Separate Render Free staging, user confirmed health + reviewer/admin sign-in | Approved 137-test source a5ec247 deployed (exact local b78bbae tree), health 200/reviewer 401. Latest authenticated end-user acceptance pending. Free deploys reset ephemeral files. Durable production storage still requires a decision |
 
 ## Latest local batch
 
@@ -90,6 +90,9 @@ must remain untouched. Current architecture is the authorized existing Flask app
 - Long-course pointer edge auto-scroll with interruption cleanup; expanded gesture checks and real 18-lesson browser drag/reload verified (133 tests).
 - Learner module sections with per-section completion totals and course/module context (134 tests); browser verified keyboard expansion, cross-module navigation, completion and 320px layout. Independent module CRUD remains unimplemented.
 - Existing structured course title/description editing with server scopes, optimistic revisions and unsaved edit guards (137 tests); synthetic browser save/reload and learner text verified.
+- Speaking previous/next word/exercise navigation, bounded visible queues, recording-state guards and old audio cleanup (138 tests); synthetic Korean/Lao/empty-filter and 320px browser checked. Local after the 137-test staging release.
+- Speaking view exit/hidden-document cleanup releases pending/active capture and suppresses late audio (139 tests, synthetic only); non-speaking initial hash and return-state browser checked. Local only.
+- Six additional Korean-instruction Lao practice drafts and 18 mixed quizzes, explicit Admin import with idempotence/edit preservation and collision rollback (141 tests); local drafts populated, none published. Full reviewed curriculum still pending.
 - Provider tests use mocks; no real AI call or paid resource has been enabled.
 
 Open items above are intentionally not claimed complete. Building an adapter or

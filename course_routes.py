@@ -216,6 +216,19 @@ def install_courses(app, legacy, db, owner):
             if course_scope(c,legacy['current_user']()) is not None:return jsonify(error='Ask an administrator to create and assign the course'),403
             c.execute('INSERT INTO courses VALUES (?,?,?,?,?)',(cid,title.strip(),language,'ko' if language=='lo' else 'lo',description))
         return jsonify(id=cid),201
+    @app.post('/api/platform/admin/lao-draft-pack')
+    @legacy['admin_required']
+    def lao_draft_pack_import():
+        from lao_draft_pack import import_drafts, COURSE_ID
+        d=request.get_json(silent=True)
+        if d!={'pack':'lao-beginner-v1'}:return jsonify(error='Invalid draft pack'),400
+        try:
+            with db() as c:
+                c.execute('BEGIN IMMEDIATE')
+                added=import_drafts(c,owner())
+        except ValueError as exc:return jsonify(error=str(exc)),409
+        return jsonify(id=COURSE_ID,added=added)
+
     @app.post('/api/platform/admin/courses/<cid>/metadata')
     @legacy['content_required']
     def course_metadata_save(cid):
