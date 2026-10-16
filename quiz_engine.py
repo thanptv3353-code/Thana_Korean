@@ -1,9 +1,15 @@
 """Validation and grading for choice, fill-blank, ordering and matching."""
-import copy,unicodedata
+import copy,unicodedata,re
 
 def text(value):return unicodedata.normalize('NFC',value).strip().casefold()
 def valid(q):
     if not isinstance(q,dict) or not isinstance(q.get('question'),str) or not q['question'].strip() or len(q['question'])>5000:return False
+    for key,limit in (('category',100),('source',500),('explanation',5000)):
+        if not isinstance(q.get(key,''),str) or len(q.get(key,''))>limit:return False
+    if not isinstance(q.get('difficulty',''),str) or q.get('difficulty','') not in ('','beginner','intermediate','advanced'):return False
+    for key in ('image_url','audio_url'):
+        value=q.get(key,'')
+        if not isinstance(value,str) or (value and not re.fullmatch(r'/media/library/[0-9a-f]{32}\.'+('(?:png|jpg|jpeg|webp)' if key=='image_url' else '(?:wav|mp3)'),value)):return False
     kind=q.get('type','choice')
     if kind in ('choice','ordering'):
         options=q.get('options')
@@ -18,7 +24,7 @@ def valid(q):
     return False
 
 def public(q):
-    d=copy.deepcopy(q);d.pop('answer',None);d.pop('accepted',None);d.pop('explanation',None)
+    d=copy.deepcopy(q);d.pop('answer',None);d.pop('accepted',None);d.pop('explanation',None);d.pop('source',None);d.pop('bank_id',None);d.pop('bank_revision',None);d.pop('bank_language',None)
     if q.get('type')=='matching':d['left']=[p['left'] for p in q['pairs']];d['options']=sorted(p['right'] for p in q['pairs']);d.pop('pairs',None)
     return d
 
@@ -37,4 +43,4 @@ def grade(q,given):
         expected=[p['right'] for p in q['pairs']]
         if given is not None and (not isinstance(given,list) or len(given)!=len(expected) or any(not isinstance(x,str) or x not in expected for x in given)):raise ValueError('Invalid matching answer')
         correct=given==expected;solution=' / '.join(p['left']+' → '+p['right'] for p in q['pairs']);answer=expected
-    return {'correct':correct,'answer':answer,'solution':solution,'explanation':q.get('explanation','')}
+    return {'correct':correct,'answer':answer,'solution':solution,'explanation':q.get('explanation',''),'source':q.get('source','')}

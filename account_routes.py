@@ -47,19 +47,24 @@ def install_accounts(app,legacy,db,owner):
         audit('password_changed',u['username']);session.clear();return jsonify(ok=True)
     @app.get('/api/platform/admin/accounts')
     @legacy['admin_required']
-    def admin_accounts():return jsonify(users=[{k:u.get(k) for k in ('username','name','role','status')} for u in legacy['users'].values()])
+    def admin_accounts():return jsonify(system_control=legacy['has_system_control'](),users=[{k:u.get(k) for k in ('username','name','role','status')} for u in legacy['users'].values()])
     @app.post('/api/platform/admin/accounts/<username>')
     @legacy['admin_required']
     def admin_account_update(username):
         d=request.get_json(silent=True) or {};role=d.get('role');status=d.get('status');u=legacy['users'].get(username)
         if not u:return jsonify(error='Not found'),404
-        if role not in ('student','teacher','admin') or status not in ('pending','approved','rejected'):return jsonify(error='Invalid account settings'),400
-        if username==owner() and (role!='admin' or status!='approved'):return jsonify(error='Cannot remove your own administrator access'),400
+        if role not in ('student','teacher','admin','superadmin') or status not in ('pending','approved','rejected'):return jsonify(error='Invalid account settings'),400
+        actor=legacy['current_user']();system=legacy['has_system_control']()
+        if not system and (role!=u['role'] or u['role'] in ('admin','superadmin')):return jsonify(error='Super Admin controls staff permissions'),403
+        if role=='superadmin' and actor.get('role')!='superadmin':return jsonify(error='Initial Super Admin requires operator activation'),403
+        if username==owner() and (role!=u['role'] or status!='approved'):return jsonify(error='Cannot remove your own administrator access'),400
+        if u['role']=='superadmin' and (role!='superadmin' or status!='approved') and not any(x.get('role')=='superadmin' and x.get('status')=='approved' and x.get('username')!=username for x in legacy['users'].values()):return jsonify(error='Keep an approved Super Admin'),400
         u['role']=role;u['status']=status;legacy['_save'](legacy['USERS_FILE'],legacy['users']);audit('account_permissions',username);return jsonify(ok=True)
     @app.post('/api/platform/admin/accounts/<username>/recovery')
     @legacy['admin_required']
     def create_recovery(username):
         if username not in legacy['users']:return jsonify(error='Not found'),404
+        if legacy['users'][username].get('role') in ('admin','superadmin') and not legacy['has_system_control']():return jsonify(error='Super Admin required for staff recovery'),403
         token=secrets.token_urlsafe(32);digest=hashlib.sha256(token.encode()).hexdigest()
         with db() as c:
             c.execute('UPDATE recovery_tokens SET used=1 WHERE username=?',(username,))

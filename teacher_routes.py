@@ -6,11 +6,11 @@ def install_teachers(app,legacy,db):
     @app.get('/teacher-assignments')
     def teacher_assignments_page():
         u=legacy['current_user']()
-        if not u or u.get('status')!='approved' or u.get('role')!='admin':return redirect('/admin')
+        if not legacy['has_system_control']():return redirect('/admin')
         return render_template('teacher-assignments.html')
 
     @app.get('/api/platform/admin/teacher-assignments')
-    @legacy['admin_required']
+    @legacy['system_required']
     def teacher_assignments_list():
         teachers=[]
         with db() as c:
@@ -24,7 +24,7 @@ def install_teachers(app,legacy,db):
         response.headers['Cache-Control']='no-store';return response
 
     @app.post('/api/platform/admin/teacher-assignments/<username>')
-    @legacy['admin_required']
+    @legacy['system_required']
     def teacher_assignments_save(username):
         u=legacy['users'].get(username)
         if not u or u.get('role')!='teacher':return jsonify(error='Teacher not found'),404

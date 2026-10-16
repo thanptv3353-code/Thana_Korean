@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('node:assert/strict'),modules=require('../static/course-modules.js');
+const lessons=[{id:'1',module:' A '},{id:'2',module:'A',unlocked:false},{id:'3',module:''},{id:'4',module:'B'},{id:'5',module:'A'},{id:'6',module:'__proto__'}];
+const original=JSON.stringify(lessons),groups=modules({lessons});
+assert.deepEqual(groups.map(g=>g.name),['A','','B','A','__proto__']);
+assert.deepEqual(groups.flatMap(g=>g.lessons.map(l=>l.id)),lessons.map(l=>l.id));
+assert.equal(groups[0].lessons[1].unlocked,false);
+assert.equal(groups[0].lessons[0],lessons[0]);
+assert.equal(JSON.stringify(lessons),original);
+assert.deepEqual(modules({lessons:[]}),[]);
+assert.deepEqual(modules({legacy:true,lessons}).map(g=>g.lessons.length),[6]);
+assert.deepEqual(modules({lessons:[{id:'one'},{id:'two',module:'  '}]}).map(g=>g.name),['']);
+console.log('Module display preserves order, access flags, legacy titles and original records');

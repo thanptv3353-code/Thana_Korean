@@ -9,19 +9,19 @@ must remain untouched. Current architecture is the authorized existing Flask app
 
 | Plan area | Implemented evidence | Remaining work / acceptance |
 |---|---|---|
-| Brand and two learning directions | Home, Korean legacy material, Lao starter, catalogs and shared navigation | Teacher-approved expansion of the Lao and Korean curriculum; full TOPIK material |
-| Course hierarchy and lesson authoring | Courses/modules/ordered blocks, optional lesson objectives, media picker, mixed quizzes, draft/publish/revisions, access and sequential rules, bounded direct MP4 clips and native preview/player, adjacent previous/next controls, staff-assigned course levels and learner level filter | Physical-device playback and touch-drag acceptance |
+| Brand and two learning directions | Home, guest first-lesson trial, Korean legacy material, Lao starter, catalogs and shared navigation | Teacher-approved expansion of the Lao and Korean curriculum; full TOPIK material |
+| Course hierarchy and lesson authoring | Courses/modules/ordered blocks, optional lesson objectives, per-lesson Free/Premium, per-question library image/audio, media picker, shared mixed-format question bank and mixed quizzes, draft/publish/revisions, access and sequential rules, bounded direct MP4 clips and native preview/player, adjacent previous/next controls, staff-assigned course levels and learner level filter | Physical-device playback/touch acceptance |
 | EPS practice and analysis | Bank/editor, snapshots, server grading, incorrect retries, complete passage groups, difficulty filter, bilingual answer explanations and private historical review; configurable category points with immutable run rubrics; owner-only multi-attempt analysis by category/skill/period | Teacher-reviewed listening audio content |
 | Timed exams | Reading/listening mocks, separate settings, server deadline, save/resume, immutable results and category analysis | Real-device audio acceptance |
 | Shared vocabulary | CSV preview/deduplication/draft import, examples, images, part of speech, both language audio uploads, saved words and spaced review, reusable lesson word references | Full reviewed vocabulary corpus; native XLSX is optional because the design allows Excel or CSV |
 | Speaking | Word selection, uploaded sample audio, speed control, temporary recording/playback, optional recognition/Korean scoring adapter, teacher-authored exercises/levels and revision-aware self-report | Teacher-reviewed exercise content; real microphone/device evaluation; native audio; validated provider quality. Lao pronunciation scoring is not implemented |
-| Accounts and roles | Username/password, approval, admin/teacher/student checks, recovery, profile, optional Google adapter, administrator-configured teacher course scope, optional email registration/verification and private SMTP outbox worker | Live SMTP/worker acceptance; self-service email password recovery; distinct super-admin role if retained in final scope |
-| Motivation and personal summary | XP, level, UTC+7 streak, progress, continue/next and owner-scoped summary | User feedback/acceptance on actual courses |
+| Accounts and roles | Username/password, approval, Super Admin/Admin/Teacher/Student checks, recovery, profile, optional Google adapter, administrator-configured teacher course scope, optional email registration/verification and private SMTP outbox worker | Live SMTP/worker acceptance; self-service email password recovery; explicit initial Super Admin activation and live role acceptance (compatibility retains legacy Admin powers until activated) |
+| Motivation and personal summary | XP, level, UTC+7 streak, progress, unified homepage resume/next, continue/next and owner-scoped summary | User feedback/acceptance on actual courses |
 | Premium | Manual plan/receipts, administrator review, time-limited entitlements, course enforcement | Automatic banking/recurring billing remain future, consistent with Free-first instruction |
 | Administration | Central dashboard, content/user/media/question tools, account audit, trend, moderation, content readiness queue, searchable content mutation metadata, bilingual homepage/help-link settings | Private live-service configuration remains external; before/after audit diffs and independent tamper-resistant logging remain future |
 | Data preservation and migration | Original JSON preserved, transactional SQLite, isolated backup/restore, preserved IDs | Actual production backup/reconciliation and migration rehearsal with the live data, before cutover |
 | Mobile web and apps | Responsive pages, manifest/icons and safe offline notice | Physical Android/iPhone install/audio tests; full offline lesson downloads and native stores are later phases |
-| Hosting/release | Separate Render Free staging, user confirmed health + reviewer/admin sign-in | Listening release b623171 deployed after user confirmed no staging data to preserve. Free deploys reset ephemeral files. Durable production storage still requires a decision |
+| Hosting/release | Separate Render Free staging, user confirmed health + reviewer/admin sign-in | Approved 110-test source c82e5da deployed (exact local d4d94b9 tree); later features through learning-direction navigation and drag auto-scroll local only. Free deploys reset ephemeral files. Durable production storage still requires a decision |
 
 ## Latest local batch
 
@@ -65,7 +65,41 @@ must remain untouched. Current architecture is the authorized existing Flask app
   browser verified picker, preview, publication and learner rendering.
 - Optional lesson objectives in draft/publication/history with plain-text learner
   display (110 tests); synthetic browser verified authoring and published view.
+- Per-question library image/audio picker and learner controls with kind/public
+  guards and unchanged grading/privacy (112 tests); synthetic browser verified
+  actual image decoding, media selection/publication and 100% grading.
+- Embedded quiz category/difficulty/provenance authoring and server validation
+  (114 tests); provenance withheld until grading; synthetic browser now verified
+  metadata persistence, public labels and post-grading source.
+- Unified owner-only homepage resume across legacy/structured visits and
+  completions, current access checks and deletion cleanup (118 tests); synthetic
+  browser verified visit→home resume→completion→next recommendation.
+- Per-lesson inherit/Free/Premium overrides with server entitlement/sequence
+  enforcement and admin-only revision guards (121 tests); synthetic browser
+  verified save/reload and the lesson Premium label.
+- Shared mixed-format lesson bank with staff-only answers, optimistic revisions,
+  archive/restore and independent lesson copies (124 tests); synthetic browser
+  verified save/search/copy/publish/archive/restore and 320px layout.
+- Distinct Super Admin with opt-in initial activation, protected system controls
+  and legacy compatibility (128 tests); synthetic browser checked ordinary Admin
+  denial/hidden controls and owner access. No actual account role changed.
+- Public full first-lesson trial with writing, unsaved server quiz/review grading
+  and locked-media/answer protections (132 tests); guest browser verified 7% for
+  one of 15 correct and 320px layout.
+- Independent study/interface language preferences with shared navigation (133 tests); synthetic cross-page routing and 320px home checked.
+- Long-course pointer edge auto-scroll with interruption cleanup; expanded gesture checks and real 18-lesson browser drag/reload verified (133 tests).
+- Learner module sections with per-section completion totals and course/module context (134 tests); browser verified keyboard expansion, cross-module navigation, completion and 320px layout. Independent module CRUD remains unimplemented.
+- Existing structured course title/description editing with server scopes, optimistic revisions and unsaved edit guards (137 tests); synthetic browser save/reload and learner text verified.
 - Provider tests use mocks; no real AI call or paid resource has been enabled.
 
 Open items above are intentionally not claimed complete. Building an adapter or
 showing a disabled control is not proof that its external service works.
+
+
+## Requirement-by-requirement audit
+
+REQUIREMENTS_AUDIT.md maps the original plan to inspected code/tests and explicit
+missing behavior. Per-lesson membership rules and embedded quiz metadata have since been added.
+The mixed-format bank now supports explicit lesson copies. Super Admin separation is now implemented; activating an actual owner remains
+an explicit operator step.
+These code gaps remain part of the objective alongside the external acceptance.

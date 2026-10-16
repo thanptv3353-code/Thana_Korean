@@ -30,7 +30,7 @@ def install_questions(app,legacy,db,questions,by_id):
     @app.get('/question-editor')
     def question_page():
         u=legacy['current_user']()
-        if not u or u.get('status')!='approved' or u.get('role') not in ('admin','teacher'):return redirect('/admin')
+        if not u or u.get('status')!='approved' or u.get('role') not in ('admin','superadmin','teacher'):return redirect('/admin')
         return render_template('question-editor.html')
     @app.get('/api/platform/admin/bank')
     @legacy['content_required']

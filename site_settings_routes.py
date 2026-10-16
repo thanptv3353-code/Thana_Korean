@@ -39,16 +39,16 @@ def install_site_settings(app,legacy,db):
     @app.get('/site-settings')
     def site_settings_page():
         u=legacy['current_user']()
-        if not u or u.get('status')!='approved' or u.get('role')!='admin':return redirect('/admin')
+        if not legacy['has_system_control']():return redirect('/admin')
         return render_template('site-settings.html')
 
     @app.get('/api/platform/admin/site-settings')
-    @legacy['admin_required']
+    @legacy['system_required']
     def site_settings_read():
         settings,revision=read();return jsonify(settings=settings,revision=revision,defaults=DEFAULTS)
 
     @app.post('/api/platform/admin/site-settings')
-    @legacy['admin_required']
+    @legacy['system_required']
     def site_settings_save():
         d=request.get_json(silent=True) or {};values=d.get('settings') if isinstance(d,dict) else None
         if not isinstance(values,dict) or set(values)!=set(DEFAULTS) or type(d.get('revision'))!=int:return jsonify(error='Invalid settings'),400

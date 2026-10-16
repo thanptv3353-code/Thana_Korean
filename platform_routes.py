@@ -139,7 +139,7 @@ def install(app, legacy):
     @app.get('/studio')
     def studio():
         u=legacy['current_user']()
-        if not u or u.get('status')!='approved' or u.get('role')!='admin':
+        if not u or u.get('status')!='approved' or u.get('role') not in ('admin','superadmin'):
             from flask import redirect
             return redirect('/admin')
         return render_template('studio.html')
@@ -212,3 +212,9 @@ def install(app, legacy):
 
     from email_routes import install_email
     install_email(app, legacy, db)
+
+    from structured_bank_routes import install_structured_bank
+    install_structured_bank(app,legacy,db)
+
+    from trial_routes import install_trial
+    install_trial(app,legacy)

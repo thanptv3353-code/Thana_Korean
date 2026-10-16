@@ -28,7 +28,7 @@ def install_vocabulary(app,legacy,db,owner):
     @app.get('/vocabulary-studio')
     def vocabulary_studio():
         u=legacy['current_user']()
-        if not u or u.get('role') not in ('admin','teacher') or u.get('status')!='approved':return redirect('/admin')
+        if not u or u.get('role') not in ('admin','superadmin','teacher') or u.get('status')!='approved':return redirect('/admin')
         return render_template('vocabulary-studio.html')
     @app.get('/api/platform/vocabulary')
     def words():
@@ -137,6 +137,6 @@ def install_vocabulary(app,legacy,db,owner):
         url='/media/audio/'+name
         with db() as c:visible=c.execute('SELECT 1 FROM vocabulary WHERE published=1 AND (audio_ko=? OR audio_lo=?)',(url,url)).fetchone()
         u=legacy['current_user']()
-        admin=u and u.get('role') in ('admin','teacher') and u.get('status')=='approved'
+        admin=u and u.get('role') in ('admin','superadmin','teacher') and u.get('status')=='approved'
         if not visible and not admin:return jsonify(error='Not found'),404
         r=send_from_directory(media,name,mimetype='audio/wav' if name.endswith('.wav') else 'audio/mpeg');r.headers['X-Content-Type-Options']='nosniff';return r

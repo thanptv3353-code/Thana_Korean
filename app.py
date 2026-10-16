@@ -84,7 +84,7 @@ if users is None:
             f.write('username: admin\npassword: ' + bootstrap_password + '\n')
     users = {
         'admin': {
-            'username': 'admin', 'name': 'Admin', 'role': 'admin',
+            'username': 'admin', 'name': 'Admin', 'role': 'superadmin' if os.environ.get('THANA_BOOTSTRAP_SUPERADMIN')=='1' else 'admin',
             'status': 'approved', 'pw': hash_pw(bootstrap_password),
         }
     }
@@ -98,7 +98,7 @@ progress = _load(PROGRESS_FILE, {})
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
 if os.environ.get('THANA_ENV') == 'production':
-    if any(u.get('role') == 'admin' and not str(u.get('pw', '')).startswith('pbkdf2_sha256$') for u in users.values()):
+    if any(u.get('role') in ('admin','superadmin') and not str(u.get('pw', '')).startswith('pbkdf2_sha256$') for u in users.values()):
         raise RuntimeError('Upgrade legacy administrator passwords before production')
     app.config['SESSION_COOKIE_SECURE'] = True
 from staging_access import install_staging_access
@@ -147,7 +147,7 @@ def is_unlocked(username, lesson):
 
 def public_video(v, unlocked, role):
     d = {'id': v['id'], 'title': v['title'], 'locked': v['locked']}
-    playable = role == 'admin' or (unlocked and not v['locked'])
+    playable = role in ('admin','superadmin') or (unlocked and not v['locked'])
     d['playable'] = playable
     if playable:
         d['embed_url'] = f"https://www.youtube.com/embed/{v['youtube_id']}"
@@ -164,8 +164,8 @@ def public_questions(qs):
     return out
 
 def public_lesson_summary(lesson, username, role):
-    unlocked = role == 'admin' or is_unlocked(username, lesson)
-    prog = student_progress(username, lesson['id'], create=False) if role != 'admin' else None
+    unlocked = role in ('admin','superadmin') or is_unlocked(username, lesson)
+    prog = student_progress(username, lesson['id'], create=False) if role not in ('admin','superadmin') else None
     status = 'locked'
     if unlocked:
         status = 'in_progress'
@@ -184,8 +184,8 @@ def public_lesson_summary(lesson, username, role):
     }
 
 def public_lesson_detail(lesson, username, role):
-    unlocked = role == 'admin' or is_unlocked(username, lesson)
-    prog = student_progress(username, lesson['id']) if role != 'admin' else None
+    unlocked = role in ('admin','superadmin') or is_unlocked(username, lesson)
+    prog = student_progress(username, lesson['id']) if role not in ('admin','superadmin') else None
     return {
         'id': lesson['id'], 'order': lesson['order'],
         'title_lo': lesson['title_lo'], 'title_ko': lesson.get('title_ko', ''),
@@ -216,7 +216,7 @@ def admin_required(f):
     @wraps(f)
     def wrap(*a, **kw):
         u = current_user()
-        if not u or u.get('status') != 'approved' or u.get('role') != 'admin':
+        if not u or u.get('status') != 'approved' or u.get('role') not in ('admin','superadmin'):
             return jsonify(error='ສະເພາະ admin ເທົ່ານັ້ນ'), 403
         return f(*a, **kw)
     return wrap
@@ -225,9 +225,25 @@ def content_required(f):
     @wraps(f)
     def wrap(*a, **kw):
         u = current_user()
-        if not u or u.get('status') != 'approved' or u.get('role') not in ('admin', 'teacher'):
+        if not u or u.get('status') != 'approved' or u.get('role') not in ('admin','superadmin','teacher'):
             return jsonify(error='Content staff only'), 403
         return f(*a, **kw)
+    return wrap
+
+def system_owner_configured():
+    # Fail closed even if an owner is externally disabled: do not restore old
+    # administrator powers merely because that owner cannot currently sign in.
+    return any(u.get('role')=='superadmin' for u in users.values())
+
+def has_system_control():
+    u=current_user()
+    return bool(u and u.get('status')=='approved' and (u.get('role')=='superadmin' or (u.get('role')=='admin' and not system_owner_configured())))
+
+def system_required(f):
+    @wraps(f)
+    def wrap(*a,**kw):
+        if not has_system_control():return jsonify(error='Super Admin required'),403
+        return f(*a,**kw)
     return wrap
 
 def current_user():
@@ -270,7 +286,7 @@ def learn_page():
 @app.route('/admin')
 def admin_page():
     user = current_user()
-    if user and user.get('status') == 'approved' and user.get('role') in ('admin', 'teacher'):
+    if user and user.get('status') == 'approved' and user.get('role') in ('admin','superadmin','teacher'):
         return redirect('/management')
     return render_template('admin.html')
 
@@ -279,7 +295,7 @@ def legacy_admin_page():
     user = current_user()
     if not user or user.get('status') != 'approved':
         return redirect('/admin')
-    if user.get('role') != 'admin':
+    if user.get('role') not in ('admin','superadmin'):
         abort(403)
     return render_template('admin.html')
 
@@ -358,7 +374,7 @@ def api_lesson_detail(lid):
         return jsonify(error='ບໍ່ພົບບົດຮຽນ'), 404
     role = session['role']
     uname = session['username']
-    if role != 'admin' and not is_unlocked(uname, lesson):
+    if role not in ('admin','superadmin') and not is_unlocked(uname, lesson):
         return jsonify(error='ບົດຮຽນນີ້ຍັງລ໋ອກຢູ່'), 403
     return jsonify(lesson=public_lesson_detail(lesson, uname, role))
 
@@ -683,7 +699,7 @@ def admin_progress():
 
 # ---------- backup (free hosting tiers may not persist disk across deploys) ----------
 @app.get('/api/admin/backup')
-@admin_required
+@system_required
 def admin_backup():
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:

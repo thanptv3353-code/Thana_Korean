@@ -41,7 +41,7 @@ async function boot() {
 
   try {
     const { user } = await api('/api/me');
-    if (user && user.status === 'approved' && ['admin','teacher'].includes(user.role)) { afterLogin(); return; }
+    if (user && user.status === 'approved' && ['admin','superadmin','teacher'].includes(user.role)) { afterLogin(); return; }
   } catch (e) {}
   document.getElementById('viewAdminAuth').classList.remove('hidden');
 }
@@ -52,7 +52,7 @@ async function doLogin() {
   const msg = document.getElementById('authMsg');
   try {
     const { user } = await api('/api/login', { method: 'POST', body: { username, password } });
-    if (!['admin','teacher'].includes(user.role)) throw new Error('ບັນຊີນີ້ບໍ່ແມ່ນ admin');
+    if (!['admin','superadmin','teacher'].includes(user.role)) throw new Error('ບັນຊີນີ້ບໍ່ແມ່ນ admin');
     afterLogin();
   } catch (e) { msg.textContent = e.message; }
 }

@@ -37,7 +37,7 @@ def install_readiness(app, legacy, db):
     @app.get('/content-readiness')
     def readiness_page():
         u = legacy['current_user']()
-        if not u or u.get('status') != 'approved' or u.get('role') not in ('admin', 'teacher'):
+        if not u or u.get('status') != 'approved' or u.get('role') not in ('admin','superadmin','teacher'):
             return redirect('/admin')
         return render_template('content-readiness.html')
 

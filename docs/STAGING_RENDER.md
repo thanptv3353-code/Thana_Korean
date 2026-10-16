@@ -104,3 +104,28 @@ dictionary metadata and listening authoring/practice/mocks. Deployment
 dep-db8nth6q1p3s738omssg built successfully; gunicorn started, health returned
 200 and the reviewer gate returned 401. No public-browser acceptance of this
 new version is claimed from the restricted in-app browser.
+
+
+## Approved objectives release — 2026-10-16
+
+User explicitly confirmed there was no staging data to preserve and authorized
+redeployment of local d4d94b9. Source-only GitHub upload created c82e5da7dd8a4bacf2214e43b2378db1ca75f3d1;
+its complete tree c5ddc83207377b197e823cb009252a8a5b8ba600 exactly matches
+the authorized local commit. Different commit IDs reflect the GitHub API parent/
+commit creation, not different files. Remote ref and commit were read back.
+
+Automatic approval review initially rejected Deploy latest commit due to this
+commit-ID ambiguity. After explicit tree equality checks, Render's Deploy a
+specific commit for c82e5da was accepted. Deployment dep-db8suj49v7es73dp2sgg
+reported Deploy succeeded | Live in 58.6 seconds. Logs show gunicorn startup,
+GET /health 200 and unauthenticated root HEAD/GET 401. The build installed the
+pinned imageio-ffmpeg Linux wheel; this does not prove actual Linux MP4 decoding.
+Screenshot evidence: docs/render-objectives-live.png (local, source-excluded).
+
+Scope: the approved 110-test snapshot (course levels, pointer draft ordering,
+shared lesson vocabulary and objectives, plus earlier features). Newer local
+question-media/metadata work is not deployed. Provider/email flags were not
+enabled. Same Free service, reviewer protection and disposable data policy.
+Production, main and domain were not modified. Full end-user re-acceptance is
+pending; no alternate public-page access path was attempted after the earlier
+browser-policy restriction. Use an ordinary external browser to review staging.

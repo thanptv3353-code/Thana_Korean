@@ -51,7 +51,7 @@ def install_membership(app,legacy,db,owner):
         u=legacy['current_user']()
         if not owner():return jsonify(error='Login required'),401
         with db() as c:r=c.execute('SELECT * FROM payment_requests WHERE id=?',(aid,)).fetchone()
-        if not r or (r['owner']!=owner() and u['role']!='admin'):return jsonify(error='Not found'),404
+        if not r or (r['owner']!=owner() and u['role'] not in ('admin','superadmin')):return jsonify(error='Not found'),404
         response=send_from_directory(receipts,r['proof']);response.headers['Cache-Control']='no-store';response.headers['X-Content-Type-Options']='nosniff';return response
     @app.post('/api/platform/admin/payments/<aid>')
     @legacy['admin_required']
@@ -69,7 +69,7 @@ def install_membership(app,legacy,db,owner):
             c.execute('UPDATE payment_requests SET status=?,reviewed=?,reviewer=?,note=? WHERE id=?',(status,time.time(),owner(),note,aid))
         return jsonify(ok=True)
     @app.post('/api/platform/admin/membership')
-    @legacy['admin_required']
+    @legacy['system_required']
     def plan_update():
         d=request.get_json(silent=True) or {};amount=d.get('amount');currency=d.get('currency');days=d.get('days');instructions=d.get('instructions');enabled=d.get('enabled')
         if type(amount)!=int or not 0<=amount<=100_000_000 or currency not in ('LAK','KRW') or type(days)!=int or not 1<=days<=366 or not isinstance(instructions,str) or len(instructions)>3000 or type(enabled)!=bool or (enabled and (not amount or not instructions.strip())):return jsonify(error='Set a valid price, duration and payment instructions'),400

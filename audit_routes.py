@@ -7,8 +7,9 @@ from flask import request
 # Explicit endpoint coverage avoids accidentally retaining credentials or tokens
 # when new account/provider routes are introduced.
 CONTENT_ACTIONS = {
+    'structured_bank_save',
     'site_settings_save', 'teacher_assignments_save', 'speaking_save', 'create_course', 'create_course_lesson', 'save_course_lesson',
-    'course_order_save', 'course_level_save', 'course_sequence', 'course_premium', 'save_word', 'import_words',
+    'lesson_access_save', 'course_order_save', 'course_level_save', 'course_metadata_save', 'course_sequence', 'course_premium', 'save_word', 'import_words',
     'upload_word_audio', 'bank_save', 'review_question', 'mock_config_save',
     'media_upload', 'media_publish', 'generate_audio', 'review_generated_audio',
     'moderate_post', 'plan_update', 'payment_review',
@@ -25,7 +26,7 @@ def install_audit(app, legacy, db):
         if action not in CONTENT_ACTIONS or request.method not in ('POST', 'PUT', 'PATCH', 'DELETE') or not 200 <= response.status_code < 300:
             return response
         user = legacy['current_user']()
-        if not user or user.get('role') not in ('admin', 'teacher'):
+        if not user or user.get('role') not in ('admin','superadmin','teacher'):
             return response
         # Import previews are read-only even though they use POST.
         result = response.get_json(silent=True) if response.is_json else None

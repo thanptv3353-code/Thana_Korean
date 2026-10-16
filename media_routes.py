@@ -10,7 +10,7 @@ def install_media(app,legacy,db,owner):
     @app.get('/media-studio')
     def media_page():
         u=legacy['current_user']()
-        if not u or u.get('status')!='approved' or u.get('role') not in ('teacher','admin'):return redirect('/admin')
+        if not u or u.get('status')!='approved' or u.get('role') not in ('admin','superadmin','teacher'):return redirect('/admin')
         return render_template('media-studio.html')
     @app.get('/api/platform/admin/media')
     @legacy['content_required']
@@ -63,7 +63,7 @@ def install_media(app,legacy,db,owner):
     def library_file(name):
         if not re.fullmatch(r'[0-9a-f]{32}\.(jpg|wav|mp3|mp4)',name):return jsonify(error='Not found'),404
         with db() as c:r=c.execute('SELECT published FROM media_assets WHERE filename=?',(name,)).fetchone()
-        u=legacy['current_user']();staff=u and u.get('status')=='approved' and u.get('role') in ('admin','teacher')
+        u=legacy['current_user']();staff=u and u.get('status')=='approved' and u.get('role') in ('admin','superadmin','teacher')
         if not r or (not r['published'] and not staff):return jsonify(error='Not found'),404
         mime={'jpg':'image/jpeg','wav':'audio/wav','mp3':'audio/mpeg','mp4':'video/mp4'}[name.rsplit('.',1)[1]]
         response=send_from_directory(directory,name,mimetype=mime);response.headers['X-Content-Type-Options']='nosniff';return response

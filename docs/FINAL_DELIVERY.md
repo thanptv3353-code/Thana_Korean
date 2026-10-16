@@ -2,21 +2,31 @@
 
 ## Latest source synchronization — 2026-10-16
 
-After explicit user authorization, sanitized source from local commit 64e8445
-was uploaded to GitHub branch codex/staging-review-20261015 as commit
-fe1eca20c6ec9ca21b8b828ed112f5d0a1fe95ca. The remote commit and branch ref
-were read back; its complete tree matches the tested local tree
-791f590165d44dd6726e2f121abb5cf6ac8b4772. Runtime accounts, databases,
-credentials, receipts, uploaded media and backups were excluded. The existing
-100-test release validation applies to this source snapshot.
+After explicit user authorization, the exact source of local d4d94b9 was uploaded
+to codex/staging-review-20261015 as GitHub commit
+c82e5da7dd8a4bacf2214e43b2378db1ca75f3d1. Remote commit/ref readback and local
+Git tree comparison both confirm c5ddc83207377b197e823cb009252a8a5b8ba600.
+No runtime accounts, databases, credentials, receipts, uploads or backups were sent.
 
-This records source upload only. Render deployment remains b623171; the newer
-features described below as local have not yet been verified on Render.
-Production and the main branch were not changed.
+Render Free deployment dep-db8suj49v7es73dp2sgg completed on 2026-10-16:
+Dashboard reports Deploy succeeded | Live (58.6 seconds), startup logs show
+/health 200 and unauthenticated root/HEAD 401. This is the 110-test approved
+release including course levels, pointer reorder, shared words and objectives.
+All subsequent features, including per-question media, quiz metadata, resume,
+lesson access overrides, the shared question bank, Super Admin separation, guest
+trial and learning-direction navigation remain local (137 tests), not deployed. Public-page/end-user re-acceptance of this release is pending;
+control-plane health is not a substitute for full browser workflow acceptance.
+Production/main/domain were not changed and no paid resource was purchased.
 
 This is the current authoritative status; older DEVELOPMENT_STATUS entries are
 incremental history. Completed as a local review build on 2026-10-15. A separate Render Free staging service was deployed on 2026-10-15;
 production/domain and payments were not changed.
+
+## Requirement audit
+
+See REQUIREMENTS_AUDIT.md for the original-plan comparison. The 137-test local build is not the complete vision: Super Admin activation,
+full language-navigation acceptance and external/content gates
+remain unverified. See SYSTEM_OWNER.md for the implemented role separation.
 
 ## Implemented
 
@@ -42,7 +52,7 @@ production/domain and payments were not changed.
 
 ## Validation
 
-- 110 isolated unit/integration tests pass (Flask, storage, grading, access,
+- 137 isolated unit/integration tests pass (Flask, storage, grading, access,
   deadline, recovery, payments, upload visibility, import, providers with mocked
   HTTP responses, restore validation and traversal rejection).
 - Browser QA used a separate server with a synthetic administrator and synthetic
@@ -525,3 +535,261 @@ and JavaScript syntax checks pass. Synthetic browser authored and published
 bilingual objectives and confirmed they appear before learner content. Screenshot
 evidence is local at docs/lesson-objectives-preview.png, excluded from bundles.
 Teacher-reviewed objectives for actual courses remain content work.
+
+
+## Media attached to lesson questions (local)
+
+Structured lesson questions of all existing grading types may include optional
+library image/audio. Teachers choose published assets in each question's picker;
+preview and learner controls show those attachments beside the question.
+The server accepts only library paths, checks kind/publication before publishing,
+and suppresses revoked/missing assets from new public lesson payloads. Media
+serving retains its own current access checks. AI audio labels derive from stored
+generation metadata, never a client-supplied flag. Leaving a lesson now pauses
+question audio as well as block audio/video. Existing grading and answer-key
+stripping remain unchanged; no imported question IDs were modified.
+
+112 isolated tests pass. New coverage checks draft/published media, wrong kinds,
+missing/revoked assets, malformed/remote URLs, ignored fake AI labels, answer/
+explanation privacy and post-submission grading. Full extracted release and JS
+syntax checks pass. Synthetic browser used the per-question picker, published
+an actual generated 48px image and silent WAV, confirmed the image decoded and
+audio controls rendered, then submitted a correct answer for 100% and explanation.
+This does not establish real speech playback quality or physical-device audio
+acceptance. Screenshot: docs/lesson-quiz-media-preview.png (local, not bundled).
+
+
+## Embedded question metadata (local, not uploaded)
+
+The mixed-format lesson question editor includes optional category (100 chars),
+beginner/intermediate/advanced difficulty and source reference (500 chars).
+Explanations are validated as strings up to 5000 chars. Old questions with absent
+metadata remain valid and unspecified; no original questions are classified
+implicitly. Category/difficulty appear with learner questions; provenance and
+explanation are withheld until server grading. All display uses text escaping.
+This adds metadata to embedded questions, not a reusable mixed-format bank.
+
+114 isolated tests pass, including all four grading types, old defaults,
+metadata bounds/types, answer/explanation/provenance withholding and grading
+readback. Full extracted release and JavaScript checks pass. Synthetic browser has now saved/published category, intermediate difficulty and
+source, reloaded them, and verified category/difficulty before grading and source
+only after grading. No real question content was changed.
+
+
+## Unified homepage resume (local, not uploaded)
+
+The homepage now offers an owner-specific resume/next/review link for the chosen
+learning direction. Structured and legacy lesson opens record a private visit
+only after access succeeds. A completed lesson suggests its adjacent accessible
+published lesson, or review at the boundary. The most recent eligible visit or
+completion wins across both course systems. No account/no activity means no
+private recommendation. Language switching invalidates stale frontend responses.
+
+An additive lesson_visits table stores owner, kind, lesson and latest visit time.
+The API never accepts an owner from the request, exposes no answer keys, uses
+no-store and rechecks current publication, course prerequisites/membership and
+legacy unlocking. It considers the latest 100 visit records plus completions;
+it is a resume suggestion, not a complete visit history. Successful student
+account deletion clears visits and structured completions to prevent these
+resume inputs surviving username reuse. Other platform data-retention behavior
+is outside this change. Actual learner progress was not modified during QA.
+
+118 isolated tests pass, covering old/new selection, completion→next→review,
+language filtering, cross-account privacy, rejected/malformed requests, locked
+visits, unpublished/premium revocation and deletion cleanup. Full extracted
+release/JS checks pass. Synthetic browser opened a lesson, saw/followed the home
+resume link, completed the quiz and then saw the next lesson recommendation.
+320px homepage had no horizontal overflow. Screenshot: docs/home-resume-preview.png
+(local and excluded from source bundles). This feature is not yet deployed.
+
+
+## Per-lesson Free/Premium access (local, not deployed)
+
+Administrators can select inherit-course (preserved default), explicitly Free or
+Premium for each structured lesson. Overrides apply immediately, independently
+of draft publication, and have their own optimistic revision. Teachers may read
+settings but cannot change them. Successful mutations are audited. One additive
+lesson_access table leaves course rules/content/progress IDs intact.
+
+Effective membership access is checked for catalog locks, direct lesson reads,
+completion, visit recording and resume recommendations. Free bypasses the course
+membership rule only; sequential prerequisites still apply. Premium in a free
+course requires an active entitlement. Entitlement expiry/revocation takes effect
+on the next request. Assigned staff retain existing preview permissions.
+Publicly published shared media and dictionary words remain public; this is not
+private paid-media hosting. No actual account/course access was changed in QA.
+
+121 isolated tests pass, including inherited defaults, free/premium overrides,
+sequence non-bypass, direct-read/complete denial, guest free preview, entitlement
+expiry, teacher/student/anonymous mutation denial, stale revision protection and
+audit events. Full extracted release and JS checks pass. Synthetic administrator
+browser saved Premium, reloaded the same value and verified the learner lesson
+label. The same session verified embedded quiz metadata publication and source
+reveal only after grading. Learner 320px layout had no horizontal overflow.
+Screenshot: docs/lesson-access-preview.png (local and source-excluded).
+
+
+## Shared mixed-format lesson question bank (local)
+
+Teachers/admins can save a lesson question to a shared bank, search by Korean/Lao
+language, type and literal question/category text, page 30 entries at a time,
+copy into multiple lessons, update with optimistic revisions, archive and restore.
+Choice, blank, matching and ordering retain existing grading/media/metadata rules.
+The editor labels the bank as shared trusted-staff content, like the existing EPS
+bank. Course teacher assignments do not scope this shared library.
+
+Bank APIs including answers/explanations/provenance are staff-only and no-store.
+There is no public bank-answer endpoint. New tables preserve bank versions and
+actor/time; mutation audit stores IDs only. Bank copies in lessons carry origin
+ID/revision/language privately, but public payloads strip those origin fields.
+Updating/archiving a bank entry does not alter already copied or published lesson
+questions or grading; teachers explicitly copy/adapt/re-publish lesson snapshots.
+Media must be valid library assets to enter the bank and public before a lesson
+using them can publish. Original EPS/legacy IDs are untouched; no migration of
+existing embedded questions occurs automatically.
+
+124 isolated tests pass, covering all four types, language/type/search/pagination,
+archive/restore, revision conflict, private roles, validation/media rejection and
+two lesson snapshots retaining original answers after a bank update. Full extracted
+release and JS checks pass. Synthetic browser saved a question to the bank,
+searched/copied it into a lesson and published, archived it (copy disabled), then
+restored it. 320px editor had no horizontal overflow. Screenshot evidence:
+docs/structured-bank-preview.png (local, excluded from source bundles).
+The mixed bank feeds structured lesson quizzes; EPS timed exams continue using
+the separate preserved EPS bank. Nothing in this batch was deployed.
+
+
+## Super Admin separation (local, not deployed)
+
+Super Admin is a distinct server role with ordinary administration/content
+capabilities. After initial owner configuration, system controls (permission
+assignment, teacher scopes, global membership plan, homepage settings and full
+private backup) require Super Admin. Ordinary Admin still manages content,
+student status, receipts and lesson/course access, but cannot modify protected
+administrator accounts or issue their recovery links. Self-removal and last
+approved-owner removal are rejected. Server current roles override session roles.
+
+For compatibility, approved Admins retain prior system powers until any owner
+record is explicitly created. Disabled owners do not re-enable that fallback.
+No existing account is automatically promoted. scripts/activate_system_owner.py
+provides an offline dry-run/explicit initial activation for an approved modern-
+password administrator. THANA_BOOTSTRAP_SUPERADMIN=1 is an opt-in for entirely
+fresh runtimes only; changing it never promotes existing users. Both actual local
+and Render account permissions were left unchanged. See SYSTEM_OWNER.md.
+
+128 isolated tests, full extracted release and JS checks pass. Synthetic browser
+verified ordinary Admin's hidden system links/disabled permission controls, then
+Super Admin's visible system controls; 320px dashboard had no overflow or console
+errors. Evidence: docs/superadmin-preview.png (local, source-excluded).
+Local preview on port 8035 was restarted with latest source and its original
+non-secret runtime configuration (no overrides). No production or staging deploy.
+
+
+## Guest first-lesson trial (local, not deployed)
+
+/try-lesson now exposes the complete first preserved Korean lesson: description,
+public/unlocked videos, writing prompts, all quiz questions and end-of-lesson
+practice. The homepage free-trial button opens it. No signup is required.
+Writing remains in the page; quiz/review answers are graded by the server without
+persisting progress, XP or unlocks, including when an account is already signed
+in. Review here is untimed practice, not an official timed exam. A clear account
+link explains that saving progress requires signup/sign-in. Lao starter browsing
+remains available through the public structured course catalog.
+
+Only the current first legacy lesson is exposed; a client cannot select another
+lesson or another question set. Answers are stripped before grading, locked
+video URLs are withheld, payload/choice IDs/types are validated, and a changed
+first lesson causes grading to reject a stale page. CSRF remains required for
+submission. No new account or learning record is created by this trial.
+
+132 isolated tests pass, including guest/signed-in non-persistence, complete
+first-lesson payload, answer/locked-media privacy, foreign lesson/question rejection,
+malformed input, stale first selection and empty content. Full extracted release
+and JS syntax checks pass. Isolated browser opened the preserved Hangul lesson
+without sign-in, answered one of 15 questions and received the expected 7% unsaved
+result; 320px layout had no horizontal overflow. Screenshot evidence is local at
+docs/guest-trial-preview.png and excluded from source packages. Source language
+content still needs teacher review; no pronunciation accuracy is implied.
+
+
+## Learning-direction navigation (local, not deployed)
+
+The homepage now separates study language (Korean/Lao) from interface language.
+An explicit study selection persists across the home, course catalog and shared
+learner navigation. Without a selection, the default is opposite the interface
+language. Explicit catalog language and a resolved lesson's course update the
+preference. Start/resume and the free sample follow the study target; Lao study
+links to its catalog and does not show Korean EPS practice/history tabs. The
+speaking selector follows the target language; this does not validate Lao scoring.
+
+133 isolated tests, extracted-source verification and JavaScript syntax checks
+pass. Synthetic browser verified Korean interface retaining explicit Lao study,
+Lao catalog → dictionary → Lao learn link, switching the catalog to Korean and
+returning home with Korean study retained. 320px home had no horizontal overflow.
+The fixture has Korean courses only; its Lao empty state verifies routing, not Lao
+lesson content. Local screenshot: docs/learning-direction-preview.png (excluded
+from source bundles). Full localization of every page remains unverified.
+
+Render Dashboard readback on 2026-10-16 confirms the approved c82e5da release is
+still Live on the Free staging service; no duplicate deployment was triggered.
+
+
+## Long-course drag auto-scroll (local, not deployed)
+
+Lesson reorder handles now scroll the editor near the top/bottom viewport edge
+while a moved pointer remains held. Speed follows edge distance, with bounded
+animation timing. Returning to the center stops scrolling; pointer release,
+cancel, lost capture, window blur, detached handles or a newly disallowed reorder
+clear the animation/capture and do not leave background scrolling. Only release
+on another lesson invokes the existing atomic revision-protected draft reorder.
+
+Expanded deterministic gesture tests cover repeated stationary edge frames, both
+directions, center stop and interruption cleanup. All 133 isolated tests and
+extracted-source/JS checks pass. A real browser drag in an isolated 18-lesson
+fixture moved scrollY from 720 to 733, saved lesson 1 at position 13, cleared
+the drag marker and retained the new order after reload. Evidence:
+docs/drag-scroll-preview.png (local, source-excluded). Physical touch acceptance
+is still pending. No existing curriculum or deployed service was changed.
+
+
+## Learner module outline (local, not deployed)
+
+Structured catalogs now display collapsible module sections with lesson counts
+and signed-in completion totals. Blank module names use a general-lessons label.
+Sections follow consecutive runs in the exact published lesson order: if a name
+recurs later it receives another section rather than moving lessons across
+prerequisites. Legacy Korean titles retain their original flat presentation.
+The lesson view shows course/module context and updates it across next/previous.
+This presents existing lesson module names; independent module records/CRUD
+remain unimplemented. No lesson IDs, publication, access or server order changed.
+
+134 isolated tests, full extracted release and JS syntax checks pass. Grouping
+checks cover repeated names, blanks, legacy titles, preserved order/access and
+non-mutation. Synthetic browser checked collapse, keyboard expansion, lesson
+context across modules, completion changing unit 1 to 1/2 and unit 2 staying 0/1,
+and a 320px catalog without horizontal overflow. Local evidence:
+docs/course-modules-preview.png (excluded from source bundles).
+
+
+## Course title/description editing (local, not deployed)
+
+The structured editor can now update an existing course title/description,
+reflecting immediately in the public catalog. The language/instruction pair,
+course and lesson IDs, published lesson snapshots, levels and access rules are
+unchanged. An additive course_metadata_revisions table gives old courses revision
+0 and serializes optimistic updates in BEGIN IMMEDIATE. Current approved staff
+roles and teacher assignments are checked by the server. Validation bounds title
+to 200 characters and description to 10000; the endpoint accepts only those fields
+and an integer revision. Successful mutation audit records IDs, not bodies.
+
+Separate unsaved course edits block course switching, creation, lesson saves and
+reordering until saved; browser navigation warns for both kinds of edits. Lesson
+save/reorder temporarily disables the metadata panel while refreshing records.
+Course metadata saves retain the lesson draft and detect typing during the save.
+
+137 isolated tests, extracted-source/JS verification pass, covering current roles,
+scopes, CSRF, stale writes, strict validation, metadata-only updates and audit IDs.
+Synthetic browser verified unsaved switch rejection, save/reload of bilingual
+text, literal angle-bracket title rendering in the catalog and 320px editor layout.
+Evidence: docs/course-metadata-preview.png (local, source-excluded). This changes
+structured course details only; original Desktop sources remain untouched.

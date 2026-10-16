@@ -86,7 +86,7 @@ async function logout() {
 function afterLogin() {
   document.getElementById('userbox').classList.remove('hidden');
   document.getElementById('hello').textContent = `👋 ${ME.name}`;
-  document.getElementById('adminLink').classList.toggle('hidden', !['admin','teacher'].includes(ME.role));
+  document.getElementById('adminLink').classList.toggle('hidden', !['admin','superadmin','teacher'].includes(ME.role));
   showDash().then(()=>{const lid=new URLSearchParams(location.search).get('lesson');if(lid)openLesson(lid);}).catch(e=>alert(e.message));
 }
 
@@ -153,6 +153,7 @@ async function openLesson(lid) {
   try {
     const { lesson } = await api('/api/lessons/' + lid);
     CURRENT_LESSON = lesson;
+    api('/api/platform/lesson-visits',{method:'POST',body:{kind:'legacy',lesson:lid}}).catch(()=>{});
     hideAll();
     document.getElementById('viewLesson').classList.remove('hidden');
     document.getElementById('lsTitleLo').textContent = `ບົດທີ ${lesson.order}: ${lesson.title_lo}`;

@@ -12,7 +12,7 @@ def install_speaking(app, legacy, db, owner):
 
     def staff():
         u=legacy['current_user']()
-        return u and u.get('status')=='approved' and u.get('role') in ('admin','teacher')
+        return u and u.get('status')=='approved' and u.get('role') in ('admin','superadmin','teacher')
 
     def audio_asset(c,url):
         if not isinstance(url,str) or not url.startswith('/media/library/'):return None
