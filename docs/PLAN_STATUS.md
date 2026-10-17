@@ -93,6 +93,7 @@ must remain untouched. Current architecture is the authorized existing Flask app
 - Speaking previous/next word/exercise navigation, bounded visible queues, recording-state guards and old audio cleanup (138 tests); synthetic Korean/Lao/empty-filter and 320px browser checked. Local after the 137-test staging release.
 - Speaking view exit/hidden-document cleanup releases pending/active capture and suppresses late audio (139 tests, synthetic only); non-speaking initial hash and return-state browser checked. Local only.
 - Six additional Korean-instruction Lao practice drafts and 18 mixed quizzes, explicit Admin import with idempotence/edit preservation and collision rollback (141 tests); local drafts populated, none published. Full reviewed curriculum still pending.
+- Interactive staff draft quiz rehearsal with all four types, course scopes and no saved learning/authoring state (144 tests); browser verified correct grading, stale draft rejection and corrected 320px result layout. Local only after 141-test staging.
 - Provider tests use mocks; no real AI call or paid resource has been enabled.
 
 Open items above are intentionally not claimed complete. Building an adapter or

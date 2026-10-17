@@ -4,6 +4,31 @@ User selected Free on 2026-10-15. A separate Free service deployed successfully 
 The existing thana-korean service (srv-d9argmjeo5us73dfbf4g) uses main,
 commit a7fc75d. Do not modify or sync its Blueprint.
 
+## Latest successful update — 2026-10-17
+
+Deployment dep-db99foc9v7es739il5p0: Deploy succeeded | Live, 1m01s, started
+04:32:17 GMT+7. User explicitly approved the 141-test source and disposable reset.
+Source df308fd3c6780e984bad84f2f0c1fdd84bbbf171 has the exact local 908be7a tree
+715a779e33d29975e90476f5963da3cd93226f39. Logs confirm Gunicorn startup,
+repeated /health 200 and anonymous HEAD/root 401. Free plan remains unchanged.
+No providers or Super Admin activation enabled. Screenshot: docs/render-141-live.png.
+
+Speaking navigation/lifecycle and Lao draft import are deployed. To create the
+six unpublished drafts in this ephemeral runtime, sign in as app Admin, open
+/editor, expand the Lao draft pack panel and import. Startup only adds the three
+public starters. Teacher review and explicit publication are separate actions.
+Fresh end-user/device acceptance is pending; previous user success is not proof
+of all new workflows. Earlier release records below are historical.
+
+## Previous prepared update (now deployed)
+
+Authorized staging branch source now points to df308fd3c6780e984bad84f2f0c1fdd84bbbf171,
+exact local 908be7ab5f27e2b349423860b3d3c61bbd10ce0f tree
+715a779e33d29975e90476f5963da3cd93226f39. 141 tests/clean extracted release pass.
+Adds local speaking navigation/lifecycle and explicit draft-only Lao pack import.
+No automatic import/publication, providers or owner activation. Auto-deploy stays
+off; approval was received and this snapshot is now deployed as recorded above.
+
 ## Current release — 2026-10-16
 
 User approved deploying b78bbae and losing disposable test data. GitHub source

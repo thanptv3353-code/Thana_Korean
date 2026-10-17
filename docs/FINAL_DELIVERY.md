@@ -1,30 +1,70 @@
 # THANA KOREAN local web application handoff
 
-## Latest source synchronization — 2026-10-16
+## Latest local update — draft review status and mobile rows (2026-10-17)
 
-After explicit source-upload and disposable-reset authorization, local release
-b78bbae7791fef0f4f690c67ebeb1c2ff1423d21 was uploaded to
-codex/staging-review-20261015 as GitHub a5ec247ff03e604c9623fb77974cb708e60bc4fc.
-Remote commit/ref readback confirms tree 098133d18fa44314b45112640e349f7c350b8081,
-identical to the tested local source. No runtime accounts, credentials, databases,
-receipts, uploads or backups were sent. Original Desktop/local migration-input
-users.json, lessons.json and progress.json still match byte-for-byte.
+Staff lesson lists now distinguish a published lesson with a different saved
+draft (◐) from a current published draft (✓) and an unpublished lesson (○).
+The new pending-change filter selects only published lessons with saved changes.
+The server compares parsed snapshots, not JSON formatting; publishing or saving
+the original content clears the indicator. No schema or lesson IDs changed.
+At widths up to 480px, lesson titles occupy the full row and the three order
+controls sit below with at least 44px height, avoiding overly narrow titles.
 
-Render Free deployment dep-db94kgvbtjjs73955rqg succeeded on 2026-10-16 at
-23:02 GMT+7 (1m07s), source a5ec247. Dashboard shows Deploy succeeded | Live;
-startup logs show repeated /health 200 and anonymous root 401. The deployed
-137-test release includes media/quiz metadata, home resume, per-lesson access,
-shared mixed-format bank, compatible Super Admin separation, guest trial,
-learning-direction preferences, drag auto-scroll, learner module sections and
-course title/description editing. Evidence: docs/render-137-live.png (local only).
-User now reports access works; full lesson/mobile re-acceptance remains pending; control-plane health does not prove
-all authenticated workflows. Actual Super Admin activation and optional paid
-providers were not enabled. Production/main/domain and the Free plan are unchanged.
+149 isolated tests and full release verification pass, including JavaScript
+syntax. Synthetic browser evidence covers draft edit/save, filter 1/3, publish
+clearing it to 0/3, unsaved lesson blocking module rename, and a two-lesson module
+rename/filter at 320px. Document width equals viewport width (320px); title width
+is 270px after the layout fix. Screenshot visually inspected:
+docs/draft-status-mobile.png (local/source-excluded). This is viewport testing,
+not physical-device/touch acceptance. These changes remain local; staging still
+runs the 141-test release. Teacher content, external providers, actual owner and
+production storage/cutover gates remain open.
 
-Feature sections below describe local implementation/QA at their original dates;
-all source through b78bbae is now in the above staging release. Later delivery
-status documentation and the speaking navigation/lifecycle and Lao draft pack updates (141-test local build)
-remain local until the next authorized synchronization.
+## Latest local update — draft module rename (2026-10-17)
+
+The editor now lists existing draft modules with lesson counts and can rename
+all drafts in a module together. The scoped staff endpoint validates the exact
+membership and every lesson revision inside one transaction; concurrent lesson
+additions/edits return 409, and existing target module names cannot be silently
+merged. Stable lesson IDs, published snapshots, access settings and learner
+progress remain unchanged. Each changed lesson receives a restorable revision;
+staff mutation metadata is audited. Unsaved editor changes block bulk renaming.
+This manages existing name-based groups; independent module records, empty
+modules and module descriptions remain unimplemented.
+
+147 isolated tests and the full extracted-source release verifier pass, including
+JavaScript syntax, clean bootstrap, idempotent seeds, HTTP and SQLite integrity.
+Synthetic browser QA renamed two drafts, verified persistence on reload, checked
+empty-name feedback and found no console errors. Evidence:
+docs/module-rename-preview.png (local/source-excluded). The module panel was subsequently exercised at 320px (see latest update); physical touch remains unverified. This update and the
+144-test interactive quiz preview are local only; staging remains the 141-test
+release documented below. No real account or deployed service was changed.
+
+## Latest deployment — 2026-10-17
+
+After explicit user approval of the 141-test release and disposable staging reset,
+Render Free deployment dep-db99foc9v7es739il5p0 succeeded (Live, 1m01s).
+Started 2026-10-17 04:32:17 GMT+7. Source is GitHub
+df308fd3c6780e984bad84f2f0c1fdd84bbbf171, exact local
+908be7ab5f27e2b349423860b3d3c61bbd10ce0f tree
+715a779e33d29975e90476f5963da3cd93226f39. Remote commit tree was checked again
+before selecting this exact commit in Render. Source-only upload excludes runtime
+accounts, credentials, databases, receipts, backups and media uploads.
+
+Dashboard/log evidence: Deploy succeeded | Live; Gunicorn startup, repeated
+/health 200 and anonymous HEAD/root 401. Initial startup still imports only the
+three public Lao starters. The six new practice drafts are available through
+Admin → editor → Lao draft pack → add six drafts, never automatic publication.
+Speaking previous/next and exit/hidden-page cleanup are now included in staging.
+Screenshot: docs/render-141-live.png (local/source-excluded).
+
+The user previously confirmed access to staging works; full acceptance of this
+new deployment, physical microphone/audio and teacher content review remain open.
+No production/main/domain/plan/provider flag or actual account role was changed.
+All application source through local 908be7a is now deployed. Older feature
+sections below retain their original local-QA dates/labels; they are historical,
+not an indication that those features remain undeployed. The subsequent interactive quiz preview update (144-test local build) and later
+status-document edits remain local until the next authorized synchronization.
 
 This is the current authoritative status; older DEVELOPMENT_STATUS entries are
 incremental history. Completed as a local review build on 2026-10-15. A separate Render Free staging service was deployed on 2026-10-15;
@@ -32,7 +72,7 @@ production/domain and payments were not changed.
 
 ## Requirement audit
 
-See REQUIREMENTS_AUDIT.md for the original-plan comparison. The 141-test local build is not the complete vision: Super Admin activation,
+See REQUIREMENTS_AUDIT.md for the original-plan comparison. The 149-test local build is not the complete vision: Super Admin activation,
 full language-navigation acceptance and external/content gates
 remain unverified. See SYSTEM_OWNER.md for the implemented role separation.
 
@@ -60,7 +100,7 @@ remain unverified. See SYSTEM_OWNER.md for the implemented role separation.
 
 ## Validation
 
-- 141 isolated unit/integration tests pass (Flask, storage, grading, access,
+- 149 isolated unit/integration tests pass (Flask, storage, grading, access,
   deadline, recovery, payments, upload visibility, import, providers with mocked
   HTTP responses, restore validation and traversal rejection).
 - Browser QA used a separate server with a synthetic administrator and synthetic
@@ -869,3 +909,27 @@ collision rollback. Synthetic browser checked six drafts, first lesson preview,
 second import adding zero, and 320px layout. Screenshot:
 docs/lao-draft-pack-preview.png (local/source-excluded). User says access works;
 this confirms access only, not every curriculum/admin/physical-device workflow.
+
+
+## Interactive staff quiz rehearsal (local, not deployed)
+
+The editor Preview now presents answer controls for choice, blank, matching and
+ordering questions and an explicit unsaved trial-grade button. It submits the
+captured unsaved lesson content to a staff-only course-scoped endpoint using the
+same quiz_engine as actual completion. The response reveals solutions/explanations
+and sources, with no-store headers. Current roles, teacher assignments, CSRF,
+content validation and strict answer validation apply. No lesson, publication,
+revision, visit, progress, XP or mutation audit record is written by rehearsal.
+It is an author check, not a learner result or proof of teaching quality.
+
+Switching lessons/reopening preview invalidates old requests; changed content or
+course rejects an outdated preview before submission and suppresses old results.
+Draft media retain existing staff access checks. Long source URLs wrap at 320px.
+
+144 isolated tests, extracted release and JS syntax checks pass. New tests cover
+all four types, all-correct/empty answers, no state writes, current-role/scope/CSRF
+denial, unknown fields/course/answers and malformed input. Synthetic browser
+graded matching/blank/choice and ordering to 100%, checked stale-draft rejection
+and zero console errors. An observed 412px overflow was corrected and rechecked
+with width/content both 320px. Evidence: docs/quiz-preview-grade.png (local only).
+No actual course or deployed service was modified by QA. Local preview refreshed.

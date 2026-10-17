@@ -200,7 +200,7 @@ def install_courses(app, legacy, db, owner):
     def admin_course_list():
         with db() as c:
             courses=[dict(r) for r in c.execute('SELECT courses.*, COALESCE((SELECT level FROM course_levels WHERE course=courses.id),\'\') AS level, COALESCE((SELECT revision FROM course_levels WHERE course=courses.id),0) AS level_revision, COALESCE((SELECT revision FROM course_metadata_revisions WHERE course=courses.id),0) AS metadata_revision, EXISTS(SELECT 1 FROM premium_courses WHERE course=courses.id) AS premium, COALESCE((SELECT sequential FROM course_rules WHERE course=courses.id),0) AS sequential FROM courses ORDER BY title')]
-            lessons=[{'id':r['id'],'course':r['course'],'draft':json.loads(r['draft']),'revision':r['revision'],'published':bool(r['published']),'access_mode':r['access_mode'],'access_revision':r['access_revision']} for r in c.execute("SELECT l.*,COALESCE(a.mode,'inherit') AS access_mode,COALESCE(a.revision,0) AS access_revision FROM course_lessons l LEFT JOIN lesson_access a ON a.lesson=l.id")]
+            lessons=[{'id':r['id'],'course':r['course'],'draft':json.loads(r['draft']),'revision':r['revision'],'published':bool(r['published']),'draft_changed':bool(r['published']) and json.loads(r['draft'])!=json.loads(r['published']),'access_mode':r['access_mode'],'access_revision':r['access_revision']} for r in c.execute("SELECT l.*,COALESCE(a.mode,'inherit') AS access_mode,COALESCE(a.revision,0) AS access_revision FROM course_lessons l LEFT JOIN lesson_access a ON a.lesson=l.id")]
             scope=course_scope(c,legacy['current_user']())
             if scope is not None:
                 courses=[r for r in courses if r['id'] in scope]
@@ -216,6 +216,24 @@ def install_courses(app, legacy, db, owner):
             if course_scope(c,legacy['current_user']()) is not None:return jsonify(error='Ask an administrator to create and assign the course'),403
             c.execute('INSERT INTO courses VALUES (?,?,?,?,?)',(cid,title.strip(),language,'ko' if language=='lo' else 'lo',description))
         return jsonify(id=cid),201
+    @app.post('/api/platform/admin/courses/<cid>/preview-grade')
+    @legacy['content_required']
+    def preview_course_grade(cid):
+        d=request.get_json(silent=True)
+        if not isinstance(d,dict) or set(d)!={'content','answers'} or not isinstance(d.get('answers'),dict):return jsonify(error='Invalid preview'),400
+        with db() as c:
+            if not c.execute('SELECT 1 FROM courses WHERE id=?',(cid,)).fetchone():return jsonify(error='Not found'),404
+            if not may_manage(c,legacy['current_user'](),cid):return jsonify(error='Course not assigned'),403
+        if not valid_content(d['content']):return jsonify(error='Invalid lesson; check the draft before preview'),400
+        qs=d['content'].get('quiz',[]);answers=d['answers']
+        if set(answers)-{str(i) for i in range(len(qs))}:return jsonify(error='Unexpected answer'),400
+        try:detail=[quiz_engine.grade(q,answers.get(str(i))) for i,q in enumerate(qs)]
+        except ValueError:return jsonify(error='Invalid answer'),400
+        score=round(100*sum(q['correct'] for q in detail)/len(qs)) if qs else 100
+        response=jsonify(score=score,total=len(qs),detail=detail,preview=True,saved=False)
+        response.headers['Cache-Control']='no-store'
+        return response
+
     @app.post('/api/platform/admin/lao-draft-pack')
     @legacy['admin_required']
     def lao_draft_pack_import():
@@ -316,7 +334,7 @@ def install_courses(app, legacy, db, owner):
             payload=json.dumps(content,ensure_ascii=False);published=payload if action=='publish' else (None if action=='unpublish' else row['published']);rev=revision+1
             c.execute('UPDATE course_lessons SET draft=?,published=?,revision=?,updated=? WHERE id=?',(payload,published,rev,time.time(),lid))
             c.execute('INSERT INTO lesson_revisions VALUES (?,?,?,?,?)',(lid,rev,payload,owner(),time.time()))
-        return jsonify(revision=rev,published=bool(published))
+        return jsonify(revision=rev,published=bool(published),draft_changed=bool(published) and content!=json.loads(published))
 
     from resume_routes import install_resume
     install_resume(app,legacy,db,owner,accessible)

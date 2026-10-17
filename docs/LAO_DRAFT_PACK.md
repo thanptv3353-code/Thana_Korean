@@ -48,6 +48,7 @@ not recreate an initial history record for an existing lesson or reset a level.
 
 141 isolated tests and JS/release checks pass. Synthetic browser verified import,
 preview, repeated import and 320px layout. This does not certify teaching quality.
-The pack/UI and later speaking fixes are local; staging remains a5ec247 until a
-new authorized deployment. User has confirmed access now works; broader latest
+The pack/UI and speaking fixes are now deployed as df308fd on 2026-10-17. The
+actual staging drafts require explicit Admin import; deployment does not copy
+the local SQLite drafts or publish them. User has confirmed access now works; broader latest
 lesson/mobile/content acceptance remains separate.
