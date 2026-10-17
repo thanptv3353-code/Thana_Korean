@@ -108,3 +108,54 @@ class CurriculumPackTests(unittest.TestCase):
             c.execute('DELETE FROM course_lessons WHERE id=?',(last['id'],))
         self.assertEqual(self.post(dict(pack='foundation-v1',language='lo')).json['counts'],dict(lo=24))
         self.assertEqual(self.post(dict(pack='foundation-v1',language='ko')).json['counts'],dict(ko=24))
+
+    def test_audio_scripts_are_source_only_staff_private_and_do_not_generate(self):
+        path='/api/platform/admin/curriculum-audio-scripts'
+        self.assertEqual(legacy.app.test_client().get(path).status_code,403)
+        for role,status in [('student','approved'),('teacher','pending')]:
+            legacy.users[self.name].update(role=role,status=status);legacy._save(legacy.USERS_FILE,legacy.users)
+            self.assertEqual(self.c.get(path).status_code,403)
+        for role in ('teacher','admin','superadmin'):
+            legacy.users[self.name].update(role=role,status='approved');legacy._save(legacy.USERS_FILE,legacy.users)
+            r=self.c.get(path);self.assertEqual(r.status_code,200)
+            self.assertEqual(r.json['source'],'authored-source-pack')
+        scripts=r.json['scripts'];self.assertEqual(len(scripts),48)
+        self.assertEqual(len({s['id'] for s in scripts}),48)
+        self.assertEqual(scripts[0]['text'],'아。\n어。\n오。\n우。\n으。\n이。')
+        for item in scripts:
+            self.assertTrue(0<len(item['text'])<=1000)
+            self.assertFalse(item['reviewed'])
+            self.assertNotIn('|',item['text'])
+            self.assertTrue(item['lesson'].startswith(COURSES[item['language']][0]))
+        self.assertEqual(sum(s['requires_letter_review'] for s in scripts),8)
+        with sqlite3.connect(os.environ['THANA_PLATFORM_DB']) as c:
+            self.assertEqual(c.execute('SELECT count(*) FROM course_lessons WHERE course IN (?,?)',tuple(v[0] for v in COURSES.values())).fetchone()[0],0)
+            self.assertEqual(c.execute('SELECT count(*) FROM tts_usage WHERE owner=?',(self.name,)).fetchone()[0],0)
+
+    def test_recording_download_scoped_utf8_private_archive(self):
+        import io
+        import zipfile
+        path='/api/platform/admin/curriculum-audio-scripts/download'
+        self.assertEqual(legacy.app.test_client().get(path).status_code,403)
+        for language,count in [('all',48),('ko',24),('lo',24)]:
+            r=self.c.get(path+'?language='+language)
+            self.assertEqual(r.status_code,200)
+            self.assertEqual(r.mimetype,'application/zip')
+            self.assertIn('no-store',r.headers['Cache-Control'])
+            self.assertIn('attachment;',r.headers['Content-Disposition'])
+            with zipfile.ZipFile(io.BytesIO(r.data)) as archive:
+                self.assertIsNone(archive.testzip())
+                manifest=json.loads(archive.read('manifest.json'))
+                self.assertEqual(len(manifest['scripts']),count)
+                self.assertEqual(len(archive.namelist()),count+2)
+                for item in manifest['scripts']:
+                    self.assertEqual(archive.read(item['language']+'/'+item['lesson']+'.txt').decode('utf-8'),item['text']+'\n')
+                    if language!='all':self.assertEqual(item['language'],language)
+                self.assertFalse(any('..' in n or n.startswith('/') for n in archive.namelist()))
+        for query in ['language=en','language=ko&language=lo','extra=1']:
+            self.assertEqual(self.c.get(path+'?'+query).status_code,400)
+        for role,status in [('student','approved'),('teacher','pending')]:
+            legacy.users[self.name].update(role=role,status=status);legacy._save(legacy.USERS_FILE,legacy.users)
+            self.assertEqual(self.c.get(path).status_code,403)
+        legacy.users[self.name].update(role='teacher',status='approved');legacy._save(legacy.USERS_FILE,legacy.users)
+        self.assertEqual(self.c.get(path).status_code,200)

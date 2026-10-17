@@ -4,28 +4,31 @@ User selected Free on 2026-10-15. A separate Free service deployed successfully 
 The existing thana-korean service (srv-d9argmjeo5us73dfbf4g) uses main,
 commit a7fc75d. Do not modify or sync its Blueprint.
 
-## Latest verified staging deployment — 2026-10-17
+## Verified 155-test staging deployment and draft initialization — 2026-10-17
 
-After explicit user approval of this release and disposable data reset, Render
-Free deployment dep-db9de6vavr4c73dlablg succeeded: Deploy succeeded | Live,
-1m00s, started 09:02:03 GMT+7. Source is GitHub
-d4f0b9f3ba86e412f69d4ffff2893ec826653462, exact tested local
-2477ffbf5ea6134948ba2328646506450057c864 tree
-f1f269ed0e88a9b4ff4069f321ad16963f10d450. The exact commit was selected manually.
-Logs show starter content count 3, Gunicorn startup, repeated /health 200 and
-anonymous HEAD/root 401. Screenshot docs/render-149-live.png was visually checked
-(local/source-excluded). Free plan, production/main/domain, provider flags and
-actual account roles remain unchanged.
+After explicit user approval of release 62b0a48 and disposable reset, exact source
+62b0a482e8c44102c5396f473c0b84e38a3848d4 deployed Live first as
+dep-db9dr87btjjs73bbk8a0 (09:29:52 GMT+7, 58.2s). The operator then saved this
+staging-only Start Command and redeployed the same exact commit:
 
-All application source through the 149-test build is now deployed, including
-interactive staff quiz preview, module rename and saved-draft status/mobile rows.
-Earlier local-only/pending labels below describe their original QA milestones,
-not the current deployment state. Source synchronization and deployment-status
-edits after local 2477ffb remain local documentation only. Authenticated use of
-the new features and actual phone/touch/audio acceptance remain pending; server
-health and synthetic tests do not prove these gates. No full production-readiness
-claim is made. Curriculum, actual owner, providers and durable data/cutover remain
-open as documented in PENDING_SETUP.md.
+```sh
+python scripts/start_server.py --init-only && python scripts/import_curriculum.py --database "$THANA_PLATFORM_DB" && python scripts/start_server.py
+```
+
+Deployment dep-db9dtonavr4c73dmsje0 started 09:35:14 GMT+7 and succeeded Live
+in 1m11s. Runtime logs at 09:36:11 confirm `New unpublished drafts: 48 {'ko': 24,
+'lo': 24}`; subsequent /health requests return 200 and anonymous root requests
+return 401. The additive importer was rehearsed twice against isolated synthetic
+data: 48 then 0 new drafts, zero published, SQLite integrity OK. Existing edits
+survive re-import; missing drafts can be recreated after Free ephemeral resets.
+This is not durable storage. No new application source was deployed for the
+Start Command change. Local render.staging.yaml now documents the same command;
+remote commit 62b0a48 retains its earlier blueprint value, so avoid syncing that
+old blueprint over the saved setting. Free plan, production/main/domain, actual
+roles and paid-provider flags are unchanged. Screenshot render-155-curriculum-live.png
+is local/source-excluded. Latest authenticated mobile/admin/lesson acceptance,
+reviewed audio and owner curriculum corrections remain pending. This record
+supersedes older local-only deployment labels below; historical QA is retained.
 
 ## 149-test source synchronization record (subsequently deployed) — 2026-10-17
 

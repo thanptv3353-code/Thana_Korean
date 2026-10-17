@@ -1,14 +1,16 @@
 # Remaining acceptance and external setup — 2026-10-16
 
-Current staging: GitHub d4f0b9f, exact local 2477ffb tree
-f1f269ed0e88a9b4ff4069f321ad16963f10d450, 149-test release. Render Free
-deployment dep-db9de6vavr4c73dlablg verified Live (1m00s, 09:02:03 GMT+7,
-2026-10-17), with repeated /health 200 and reviewer gate 401 after explicit
-user reset approval. Includes quiz preview, module rename and draft status/mobile
-rows. Startup still imports only three public Lao starters; six practice drafts
-require explicit staff import and review. User confirmed prior mobile access;
-acceptance of the newest authenticated workflows remains pending. Later status
-edits are local documentation. FINAL_DELIVERY.md is authoritative.
+Current staging: GitHub 62b0a48, exact tested local f2baf2a tree
+642d82eb6c3ff50aa4990749763a87b5e42330dc, 155 isolated tests and clean extracted
+source verification. After explicit user release/reset approval, Render Free
+dep-db9dtonavr4c73dmsje0 succeeded Live (1m11s, 09:35:14 GMT+7, 2026-10-17).
+Logs confirm 48 unpublished foundation drafts imported (24 per direction),
+/health 200 and reviewer gate 401. Staging Start Command explicitly initializes,
+imports missing foundation drafts and serves; local blueprint matches this saved
+setting, while deployed source 62b0a48's blueprint still has the earlier command.
+Six separate Lao practice drafts still require explicit import. User confirmed
+prior mobile access; acceptance of these latest authenticated workflows remains
+pending. Later status/configuration edits are local. FINAL_DELIVERY.md is authoritative.
 
 ## Next acceptance, in order
 
@@ -16,7 +18,7 @@ edits are local documentation. FINAL_DELIVERY.md is authoritative.
 |---|---|---|
 | Latest staging learner/admin use | Render health 200, reviewer 401; isolated browser workflows pass | User opens staging in their working Chrome/mobile browser, signs in, opens Korean and Lao lessons and Admin, and reports exact failing step or success. User reports access works; full lesson/admin-path acceptance is not inferred from that short response. |
 | Microphone and audio | Synthetic recorder/navigation/hidden-page tests pass; no real microphone used | On actual Android/iPhone, listen, grant microphone permission personally, record/stop/play back, leave speaking and confirm capture stops. The new navigation/hidden-page fixes are deployed and need actual device evaluation. |
-| Curriculum and recordings | Original material retained; the agent authored and locally imported 48 foundation drafts (24 per direction), with 206 exercises and full review manuscript | The user will review and request corrections as instructed. Add reviewed audio before claiming listening coverage. Intermediate/advanced/full TOPIK expansion remains additional authoring; these drafts are not presented as independently reviewed. |
+| Curriculum and recordings | Original material retained; the agent authored and imported locally and on staging 48 foundation drafts (24 per direction), with 206 exercises and full review manuscript | The user will review and request corrections as instructed. A local Media Studio helper prepares 48 vocabulary recording prompts plus all/either-language ZIP downloads (158 tests), without generating audio. Local editor media search/type filters/preview and duplicate protection are verified in the 159-test release. Add reviewed audio before claiming listening coverage. Intermediate/advanced/full TOPIK expansion remains additional authoring; these drafts are not presented as independently reviewed. |
 | Actual Super Admin | Four roles and protected controls tested with synthetic accounts | Operator explicitly chooses the intended owner and follows SYSTEM_OWNER.md. No actual account is promoted automatically. |
 | Durable production and migration | Free staging is disposable; isolated restore rehearsed | Obtain actual production backup privately, reconcile data, rehearse migration/restore on durable storage and obtain cutover approval. Do not put backup/accounts in Git or chat. |
 

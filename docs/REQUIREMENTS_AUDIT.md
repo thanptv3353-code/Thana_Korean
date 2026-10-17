@@ -5,22 +5,23 @@ execution instructions), subsequent directions to extend the existing app and
 use Render Free first, and AGENTS.md. This audit preserves the full objective.
 It does not redefine the goal as the features that happen to pass tests.
 
-Current deployed application release: local 2477ffb, 149 isolated tests, clean
-extracted source, bootstrap, two seeds, SQLite integrity, HTTP and JS checks.
-GitHub d4f0b9f has exact tree f1f269ed0e88a9b4ff4069f321ad16963f10d450.
-Render deployment dep-db9de6vavr4c73dlablg succeeded Live on Free (1m00s,
-2026-10-17 09:02:03 GMT+7); logs show /health 200 and reviewer gate 401. User
-explicitly approved this disposable reset. Quiz preview, module rename and draft
-status/mobile rows are deployed. Latest authenticated feature/device acceptance
-remains open. Six Lao drafts require explicit import and teacher review; none
-publish automatically. Later status edits remain local documentation only.
+Current deployed application release: GitHub 62b0a48, exact local f2baf2a tree
+642d82eb6c3ff50aa4990749763a87b5e42330dc, 155 isolated tests and extracted-source,
+bootstrap, SQLite, HTTP and JavaScript verification. Render Free deployment
+dep-db9dtonavr4c73dmsje0 succeeded Live (1m11s, 2026-10-17 09:35:14 GMT+7)
+after explicit user release/reset approval. Runtime logs confirm 48 unpublished
+foundation drafts imported (24 per direction), /health 200 and reviewer gate 401.
+Direct bilingual account login/signup is deployed. Staging's explicit startup
+import recreates missing drafts without overwriting edits or publishing them.
+Authenticated acceptance of this release remains open. Later status/configuration
+edits are local only; FINAL_DELIVERY.md records the saved command/blueprint distinction.
 
 ## Concrete coverage and open requirements
 
 | Original requirement | Inspected evidence | Assessment / remaining proof |
 |---|---|---|
 | Keep name, domain and existing material | templates/index.html; course_routes.py; LOCAL_CONTENT_INVENTORY.md; direct read-only byte comparisons on 2026-10-16 | Brand retained. Original Desktop lessons.json/users.json/progress.json equal local preserved migration inputs byte-for-byte. This does not prove parity with production data. Domain unchanged. |
-| Both Korean-for-Lao and Lao-for-Korean | language/instruction fields; starter seeding; courses and public dictionary | Local structure exists; three public Lao starter lessons and six starter words, plus six new local unpublished practice drafts (18 quizzes, 141 tests; see LAO_DRAFT_PACK.md). Two additional complete foundation draft tracks now exist locally: 24 Korean-for-Lao and 24 Lao-for-Korean lessons, 206 exercises, 14 selected legacy questions with IDs preserved, explicit import and local runtime populated (155 tests; CURRICULUM_REVIEW.md). Owner review/audio and intermediate/advanced/full TOPIK expansion remain pending. |
+| Both Korean-for-Lao and Lao-for-Korean | language/instruction fields; starter seeding; courses and public dictionary | Local structure exists; three public Lao starter lessons and six starter words, plus six new local unpublished practice drafts (18 quizzes, 141 tests; see LAO_DRAFT_PACK.md). Two additional complete foundation draft tracks now exist locally and on staging: 24 Korean-for-Lao and 24 Lao-for-Korean lessons, 206 exercises, 14 selected legacy questions with IDs preserved, explicit import and local runtime populated (155 tests; CURRICULUM_REVIEW.md). Owner review/audio and intermediate/advanced/full TOPIK expansion remain pending. |
 | Clear home and language navigation | templates/index.html; static/hub.js; shared learner nav | Home study-language selection is separate from interface language and persists through catalog/shared navigation; Lao paths avoid Korean EPS tabs. Synthetic cross-page routing and 320px home checked, 133 tests. Full interface localization across every page remains unverified. |
 | Prominent home continue-from-previous action | continueLegacy in templates/index.html; course catalog continue buttons | Owner-only unified home resume/next/review now uses approved-account visits/completions across structured and legacy lessons with current access checks (118 tests); synthetic browser workflow verified; included in staging a5ec247. Actual learner acceptance remains pending. |
 | Language → course → module → lesson | courses table; JSON module/order; scoped editor | Existing module names now form collapsible learner sections with completion totals and lesson context. Consecutive grouping preserves published order/access; 134 tests and synthetic browser evidence. Existing course title/description editing now has scoped optimistic updates (137 tests; synthetic save/reload accepted). Existing draft groups now have atomic bulk renaming with exact membership/revision checks and history (147-test local build; synthetic two-lesson rename/reload verified). Independent module records, empty modules and descriptions remain unimplemented. |

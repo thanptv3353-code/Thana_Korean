@@ -83,3 +83,17 @@ def import_drafts(connection, actor, language='all'):
                 connection.execute('INSERT INTO lesson_revisions VALUES (?,?,?,?,?)',(item['id'],1,payload,actor,now));added+=1
         counts[lang]=added
     return counts
+
+
+def audio_scripts():
+    """Recording prompts from the preserved authored pack, never live owner edits."""
+    result=[]
+    for language,rows in (('ko',KOREAN),('lo',LAO)):
+        for index,row in enumerate(rows,1):
+            # Only target-language vocabulary, not bilingual explanations/answers.
+            words=[line.split('|',1)[0].strip() for line in row[3].splitlines()]
+            lid=f'{COURSES[language][0]}-{index:02d}'
+            result.append(dict(id=lid+'-vocabulary',lesson=lid,language=language,
+                title=f'{index:02d} · '+row[0],text='。\n'.join(words)+'。',
+                requires_letter_review=index<=4,reviewed=False))
+    return result

@@ -9,7 +9,7 @@ must remain untouched. Current architecture is the authorized existing Flask app
 
 | Plan area | Implemented evidence | Remaining work / acceptance |
 |---|---|---|
-| Brand and two learning directions | Home, guest first-lesson trial, Korean legacy material, Lao starter, catalogs and shared navigation | 48 newly authored local foundation drafts (24 per direction; 206 exercises) await owner review/audio. Intermediate/advanced and full TOPIK expansion remain pending. |
+| Brand and two learning directions | Home, guest first-lesson trial, Korean legacy material, Lao starter, catalogs and shared navigation | 48 newly authored foundation drafts, imported locally and on staging (24 per direction; 206 exercises) await owner review/audio. Intermediate/advanced and full TOPIK expansion remain pending. |
 | Course hierarchy and lesson authoring | Courses/modules/ordered blocks, optional lesson objectives, per-lesson Free/Premium, per-question library image/audio, media picker, shared mixed-format question bank and mixed quizzes, draft/publish/revisions, access and sequential rules, bounded direct MP4 clips and native preview/player, adjacent previous/next controls, staff-assigned course levels and learner level filter | Physical-device playback/touch acceptance |
 | EPS practice and analysis | Bank/editor, snapshots, server grading, incorrect retries, complete passage groups, difficulty filter, bilingual answer explanations and private historical review; configurable category points with immutable run rubrics; owner-only multi-attempt analysis by category/skill/period | Teacher-reviewed listening audio content |
 | Timed exams | Reading/listening mocks, separate settings, server deadline, save/resume, immutable results and category analysis | Real-device audio acceptance |
@@ -21,7 +21,7 @@ must remain untouched. Current architecture is the authorized existing Flask app
 | Administration | Central dashboard, content/user/media/question tools, account audit, trend, moderation, content readiness queue, searchable content mutation metadata, bilingual homepage/help-link settings | Private live-service configuration remains external; before/after audit diffs and independent tamper-resistant logging remain future |
 | Data preservation and migration | Original JSON preserved, transactional SQLite, isolated backup/restore, preserved IDs | Actual production backup/reconciliation and migration rehearsal with the live data, before cutover |
 | Mobile web and apps | Responsive pages, manifest/icons and safe offline notice | Physical Android/iPhone install/audio tests; full offline lesson downloads and native stores are later phases |
-| Hosting/release | Separate Render Free staging, user confirmed health + reviewer/admin sign-in | 149-test source d4f0b9f deployed with exact local 2477ffb tree; Render dep-db9de6vavr4c73dlablg Live, health 200/reviewer 401, after explicit reset approval. Latest authenticated end-user acceptance pending. Free deploys reset ephemeral files. Durable production storage still requires a decision |
+| Hosting/release | Separate Render Free staging, user confirmed health + reviewer/admin sign-in | 155-test source 62b0a48 deployed with exact local f2baf2a tree; Render dep-db9dtonavr4c73dmsje0 Live, 48 drafts imported (24 per direction), health 200/reviewer 401 after explicit reset approval. Latest authenticated end-user acceptance pending. Free deploys reset ephemeral files. Durable production storage still requires a decision |
 
 ## Latest local batch
 

@@ -10,7 +10,11 @@ services:
     numInstances: 1
     autoDeployTrigger: "off"
     buildCommand: pip install -r requirements.staging.lock.txt
-    startCommand: python scripts/start_server.py
+    # Explicit staging draft initialization; additive, unpublished, repeat-safe.
+    startCommand: >-
+      python scripts/start_server.py --init-only &&
+      python scripts/import_curriculum.py --database "$THANA_PLATFORM_DB" &&
+      python scripts/start_server.py
     healthCheckPath: /health
     envVars:
       - key: THANA_ENV

@@ -1,5 +1,108 @@
 # THANA KOREAN local web application handoff
 
+## Latest local update — searchable lesson media selection (2026-10-17)
+
+The existing editor media picker now searches titles, filters audio/image/video,
+shows result counts and an empty state, and offers native audio/video preview
+controls with preload disabled. Filtering/reloading pauses prior preview media;
+selecting a different lesson also pauses picker playback. Private draft assets
+remain visible only to staff and cannot be selected for lesson blocks. The
+existing server checks still govern media access and publishing. Adding a media
+URL already present with the same block type is rejected in the editor; choosing
+media only changes the current draft until the author saves/publishes explicitly.
+
+159 isolated tests and clean extracted-source, bootstrap, SQLite, HTTP and all
+static JavaScript syntax checks pass. New UI tests cover filtering, draft selection
+denial, callback behavior, lazy audio and playback cleanup. Synthetic browser
+verified audio filter/title search, adding published synthetic silence, repeated
+selection leaving one audio block, and draft save producing revision 3 with
+unpublished changes; no console errors. Screenshot lesson-audio-picker.png is
+local/source-excluded. Synthetic silence is not a real language/audio quality test.
+No provider or Notevibes integration was called. This update is local only;
+staging still runs 155-test source 62b0a48. Real audio review and device acceptance
+remain pending.
+
+## Latest local update — downloadable recording packs (2026-10-17)
+
+Media Studio now links to UTF-8 recording-script ZIPs for both tracks or either
+language separately. Each export contains 48 or 24 lesson-ID-named text files,
+a manifest preserving script/lesson identity, language and unreviewed/letter-review
+flags, and bilingual recording guidance. Downloads use the same approved content
+staff permission as the private script list, validate filters, and send private,
+no-store responses. They export only the authored source vocabulary; no current
+lesson edits, account data, audio, credentials or quiz answer keys are included.
+Exports do not change lessons/media, synthesize audio or call paid providers.
+
+Release verification: 158 isolated tests, clean extracted source, repeat-safe
+starter initialization, SQLite integrity, HTTP and JavaScript syntax checks.
+Archive tests inspect every UTF-8 text against its manifest, all/either-language
+counts, safe names, staff/pending/anonymous permissions and invalid filters.
+An actual 48-lesson ZIP was prepared through the isolated synthetic staff endpoint
+at /tmp/thana-recording-scripts-all.zip for user review (outside source bundle).
+This feature and the preceding 157-test recording selector remain local only;
+staging remains the verified 155-test release 62b0a48. Audio recording/review,
+latest device acceptance and durable production/cutover remain open.
+
+## Latest local update — curriculum vocabulary recording scripts (2026-10-17)
+
+Media Studio now offers 48 source-pack vocabulary recording scripts (24 per
+language). Approved content staff can load a script into the existing editable
+TTS form, with matching language voice, title, overwrite confirmation and a reset
+consent checkbox. Selection never synthesizes, publishes, attaches audio or calls
+a provider. Scripts contain target vocabulary only, not bilingual explanations or
+quiz answers. They come from the authored source pack and explicitly do not
+reflect subsequent live lesson edits. The first four lessons per track carry a
+letter-name versus actual-sound review reminder. These are unreviewed recording
+prompts, not audio files or validated pronunciation samples.
+
+157 isolated tests plus extracted-source/bootstrap/SQLite/HTTP and all static
+JavaScript syntax checks pass. Tests cover staff-only access including pending
+role denial, 48 unique script/lesson mappings, no database/usage writes, language
+voice selection, cancellation preserving edited text and cleared consent. Local
+synthetic browser verified Lao lesson 05 loading text/voice/title, disabled TTS
+with providers off, and no console errors. Screenshot curriculum-audio-scripts.png
+is local/source-excluded. No actual audio/provider call occurred. This update is
+local only; staging still runs the verified 155-test source 62b0a48 below.
+
+## Latest source synchronization — 155-test curriculum review (2026-10-17)
+
+GitHub branch codex/staging-review-20261015 now points to
+62b0a482e8c44102c5396f473c0b84e38a3848d4. Its tree
+642d82eb6c3ff50aa4990749763a87b5e42330dc exactly matches tested local
+f2baf2abf80935b89e4a75e266cf3b21f8fe62b4. Tree creation and branch-head readback
+were verified. Includes the 48 authored foundation drafts, full review manuscript,
+explicit draft import and direct bilingual account login/signup. No runtime data,
+credentials, receipts, uploads or backups were included. The 48 local SQLite
+drafts are not copied as runtime files; the source pack recreates missing drafts
+through explicit import. This exact source is now deployed on Free staging; see
+the deployment record below. Subsequent status/configuration edits are local only.
+
+## Verified 155-test staging deployment and draft initialization — 2026-10-17
+
+After explicit user approval of release 62b0a48 and disposable reset, exact source
+62b0a482e8c44102c5396f473c0b84e38a3848d4 deployed Live first as
+dep-db9dr87btjjs73bbk8a0 (09:29:52 GMT+7, 58.2s). The operator then saved this
+staging-only Start Command and redeployed the same exact commit:
+
+```sh
+python scripts/start_server.py --init-only && python scripts/import_curriculum.py --database "$THANA_PLATFORM_DB" && python scripts/start_server.py
+```
+
+Deployment dep-db9dtonavr4c73dmsje0 started 09:35:14 GMT+7 and succeeded Live
+in 1m11s. Runtime logs at 09:36:11 confirm `New unpublished drafts: 48 {'ko': 24,
+'lo': 24}`; subsequent /health requests return 200 and anonymous root requests
+return 401. The additive importer was rehearsed twice against isolated synthetic
+data: 48 then 0 new drafts, zero published, SQLite integrity OK. Existing edits
+survive re-import; missing drafts can be recreated after Free ephemeral resets.
+This is not durable storage. No new application source was deployed for the
+Start Command change. Local render.staging.yaml now documents the same command;
+remote commit 62b0a48 retains its earlier blueprint value, so avoid syncing that
+old blueprint over the saved setting. Free plan, production/main/domain, actual
+roles and paid-provider flags are unchanged. Screenshot render-155-curriculum-live.png
+is local/source-excluded. Latest authenticated mobile/admin/lesson acceptance,
+reviewed audio and owner curriculum corrections remain pending. This record
+supersedes older local-only deployment labels below; historical QA is retained.
+
 ## Current local curriculum — 48 authored foundation drafts (2026-10-17)
 
 At the user's explicit request to author the courses and let them review later,
@@ -15,8 +118,9 @@ answer key are in CURRICULUM_REVIEW.md, generated from the actual pack source.
 Admin/Super Admin can explicitly import both or either track in /editor. Import
 is atomic, idempotent and draft-only; existing owner edits, publications, progress,
 course metadata, levels and original IDs survive re-import. New courses start as
-beginner/sequential, and publication remains per lesson. No startup/deploy import
-is added. The original Desktop folders and source JSON were not changed. The
+beginner/sequential, and publication remains per lesson. The application default
+startup does not import the pack. The staging operator explicitly configured the
+existing import script before server startup, as recorded below. The original Desktop folders and source JSON were not changed. The
 operator script requires an explicit initialized database path. Forty-eight drafts
 were added to the existing local runtime as curriculum-authoring: 24 per course,
 zero published, with all pre-existing curriculum/history/progress rows compared
@@ -36,9 +140,9 @@ This is a substantive foundation curriculum, not a complete intermediate/advance
 or full TOPIK program. Reviewed audio and owner corrections remain pending. User
 review is explicitly requested after authoring; the earlier request to supply all
 curriculum externally is superseded for these authored drafts. Source and local
-runtime contain this work; staging remains the verified 149-test d4f0b9f release
-until separately synchronized/deployed. Direct account sign-in/signup updates
-remain local too. Other content/operator/production gates below remain open.
+runtime contain this work; staging now contains the same 48 unpublished drafts
+and direct bilingual account sign-in/signup. Other content/operator/production
+gates below remain open.
 
 ## Latest local update — direct bilingual username registration (2026-10-17)
 

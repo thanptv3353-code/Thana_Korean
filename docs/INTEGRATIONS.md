@@ -122,3 +122,10 @@ This feature does not implement self-service email password recovery.
 
 Disabling the email flag stops new email signup/resend; it does not bypass the
 verification requirement for accounts already registered through this flow.
+
+
+Media Studio additionally offers 48 source-pack vocabulary recording prompts.
+Loading a prompt does not send it to Azure; it clears consent and asks before
+replacing existing text. These prompts do not track later live lesson edits.
+Letter lessons require special review of letter names versus actual sounds.
+This helper is locally verified (157 tests), not yet deployed; no audio was generated.
