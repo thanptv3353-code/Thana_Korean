@@ -7,7 +7,7 @@ from flask import request
 # Explicit endpoint coverage avoids accidentally retaining credentials or tokens
 # when new account/provider routes are introduced.
 CONTENT_ACTIONS = {
-    'structured_bank_save', 'lao_draft_pack_import', 'rename_course_module',
+    'structured_bank_save', 'lao_draft_pack_import', 'rename_course_module', 'curriculum_pack_import',
     'site_settings_save', 'teacher_assignments_save', 'speaking_save', 'create_course', 'create_course_lesson', 'save_course_lesson',
     'lesson_access_save', 'course_order_save', 'course_level_save', 'course_metadata_save', 'course_sequence', 'course_premium', 'save_word', 'import_words',
     'upload_word_audio', 'bank_save', 'review_question', 'mock_config_save',

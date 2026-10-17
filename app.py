@@ -304,31 +304,31 @@ def legacy_admin_page():
 # ============================================================
 @app.post('/api/register')
 def register():
-    d = request.get_json(force=True)
-    if not all(isinstance(d.get(k), str) for k in ('name', 'username', 'password')):
+    d = request.get_json(silent=True)
+    if not isinstance(d, dict) or not all(isinstance(d.get(k), str) for k in ('name', 'username', 'password')):
         return jsonify(error='Invalid registration fields'), 400
     name = d['name'].strip()
     uname = d['username'].strip().lower()
     pw = d['password']
-    if not name or not uname or not isinstance(pw, str) or not 8 <= len(pw) <= 128:
-        return jsonify(error='ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບ (ລະຫັດຜ່ານ 8–128 ຕົວ)'), 400
+    if not 1 <= len(name) <= 100 or not uname or not 8 <= len(pw) <= 128:
+        return jsonify(error='ຊື່ 1–100, ລະຫັດ 8–128 ຕົວ / 이름 1–100자, 비밀번호 8–128자를 입력하세요'), 400
     if not re.fullmatch(r'[a-z0-9_]{3,50}', uname):
-        return jsonify(error='ຊື່ຜູ້ໃຊ້ໃຫ້ໃຊ້ a-z, 0-9, _ ເທົ່ານັ້ນ'), 400
+        return jsonify(error='ຊື່ຜູ້ໃຊ້ 3–50 ຕົວ: a-z, 0-9, _ / 사용자 이름은 영문 소문자·숫자·밑줄 3–50자입니다'), 400
     with _lock:
         if uname in users:
-            return jsonify(error='ຊື່ຜູ້ໃຊ້ນີ້ມີຄົນໃຊ້ແລ້ວ'), 400
+            return jsonify(error='ຊື່ຜູ້ໃຊ້ນີ້ມີຄົນໃຊ້ແລ້ວ / 이미 사용 중인 사용자 이름입니다'), 400
         users[uname] = {
             'username': uname, 'name': name, 'role': 'student',
             'status': 'pending', 'pw': hash_pw(pw),
             'created_at': time.time(),
         }
         _save(USERS_FILE, users)
-    return jsonify(ok=True, message='ລົງທະບຽນສຳເລັດ, ກະລຸນາລໍຖ້າ admin ອະນຸມັດ')
+    return jsonify(ok=True, message='ລົງທະບຽນສຳເລັດ, ລໍຖ້າແອັດມິນອະນຸມັດ / 가입 완료. 관리자 승인을 기다려 주세요')
 
 @app.post('/api/login')
 def login():
-    d = request.get_json(force=True)
-    if not isinstance(d.get('username'), str) or not isinstance(d.get('password'), str) or len(d['password']) > 128:
+    d = request.get_json(silent=True)
+    if not isinstance(d, dict) or not isinstance(d.get('username'), str) or not isinstance(d.get('password'), str) or len(d['password']) > 128:
         return jsonify(error='Invalid login fields'), 400
     uname = d['username'].strip().lower()
     pw = d['password']
@@ -338,7 +338,7 @@ def login():
     email_check=app.config.get('THANA_EMAIL_LOGIN_ALLOWED')
     if email_check and not email_check(uname):return jsonify(error='ກະລຸນາຢືນຢັນອີເມວ / 이메일을 먼저 확인해 주세요'),403
     if u['status'] != 'approved':
-        return jsonify(error='ບັນຊີຂອງທ່ານຍັງບໍ່ໄດ້ຮັບການອະນຸມັດ'), 403
+        return jsonify(error='ບັນຊີຂອງທ່ານຍັງບໍ່ໄດ້ຮັບການອະນຸມັດ / 아직 승인되지 않은 계정입니다'), 403
     session['username'] = uname
     session['auth_version'] = u.get('auth_version', 0)
     session['role'] = u['role']

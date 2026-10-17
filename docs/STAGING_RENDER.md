@@ -4,6 +4,47 @@ User selected Free on 2026-10-15. A separate Free service deployed successfully 
 The existing thana-korean service (srv-d9argmjeo5us73dfbf4g) uses main,
 commit a7fc75d. Do not modify or sync its Blueprint.
 
+## Latest verified staging deployment — 2026-10-17
+
+After explicit user approval of this release and disposable data reset, Render
+Free deployment dep-db9de6vavr4c73dlablg succeeded: Deploy succeeded | Live,
+1m00s, started 09:02:03 GMT+7. Source is GitHub
+d4f0b9f3ba86e412f69d4ffff2893ec826653462, exact tested local
+2477ffbf5ea6134948ba2328646506450057c864 tree
+f1f269ed0e88a9b4ff4069f321ad16963f10d450. The exact commit was selected manually.
+Logs show starter content count 3, Gunicorn startup, repeated /health 200 and
+anonymous HEAD/root 401. Screenshot docs/render-149-live.png was visually checked
+(local/source-excluded). Free plan, production/main/domain, provider flags and
+actual account roles remain unchanged.
+
+All application source through the 149-test build is now deployed, including
+interactive staff quiz preview, module rename and saved-draft status/mobile rows.
+Earlier local-only/pending labels below describe their original QA milestones,
+not the current deployment state. Source synchronization and deployment-status
+edits after local 2477ffb remain local documentation only. Authenticated use of
+the new features and actual phone/touch/audio acceptance remain pending; server
+health and synthetic tests do not prove these gates. No full production-readiness
+claim is made. Curriculum, actual owner, providers and durable data/cutover remain
+open as documented in PENDING_SETUP.md.
+
+## 149-test source synchronization record (subsequently deployed) — 2026-10-17
+
+Source-only synchronization completed: GitHub
+d4f0b9f3ba86e412f69d4ffff2893ec826653462 on
+codex/staging-review-20261015. Its tree
+f1f269ed0e88a9b4ff4069f321ad16963f10d450 exactly matches tested local
+2477ffbf5ea6134948ba2328646506450057c864; tree creation response and subsequent
+branch-head readback were verified. Includes interactive staff quiz preview,
+atomic draft module rename, explicit saved-draft change status/filter and readable
+320px lesson rows. No runtime accounts, credentials, databases, uploads, receipts
+or backups were uploaded. Original Desktop folders remain untouched.
+
+Render Settings was rechecked after synchronization: Auto-Deploy Off, Free plan,
+last successful source still df308fd and deployment dep-db99foc9v7es739il5p0 Live.
+At synchronization time deployment awaited reset confirmation; the user subsequently authorized it and the latest deployment above completed.
+Production/main/domain/provider flags and actual roles were not changed. This
+synchronization status section is local documentation added after source upload.
+
 ## Latest successful update — 2026-10-17
 
 Deployment dep-db99foc9v7es739il5p0: Deploy succeeded | Live, 1m01s, started

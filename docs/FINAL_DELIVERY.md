@@ -1,5 +1,132 @@
 # THANA KOREAN local web application handoff
 
+## Current local curriculum — 48 authored foundation drafts (2026-10-17)
+
+At the user's explicit request to author the courses and let them review later,
+THANA KOREAN now has two original 24-lesson foundation tracks: Korean taught in
+Lao and Lao taught in Korean. Each has six ordered modules, objectives, substantive
+explanations, word/character lists, examples/dialogues, self-practice and four
+exercise types. Total: 206 exercises, including 14 carefully selected legacy quiz
+questions retaining their original IDs, wording, options and answers. The selected
+items have clear meaning and relevant placement; no claim of a globally “best”
+course or independent native-speaker review is made. The full 48-lesson text and
+answer key are in CURRICULUM_REVIEW.md, generated from the actual pack source.
+
+Admin/Super Admin can explicitly import both or either track in /editor. Import
+is atomic, idempotent and draft-only; existing owner edits, publications, progress,
+course metadata, levels and original IDs survive re-import. New courses start as
+beginner/sequential, and publication remains per lesson. No startup/deploy import
+is added. The original Desktop folders and source JSON were not changed. The
+operator script requires an explicit initialized database path. Forty-eight drafts
+were added to the existing local runtime as curriculum-authoring: 24 per course,
+zero published, with all pre-existing curriculum/history/progress rows compared
+and preserved. Original selected question IDs also survive editor save/reload.
+
+155 isolated tests and full extracted-source verification pass. Tests validate
+all 48 authored contents through the actual preview API/grader, the 206 questions,
+legacy identity/answer parity, permissions/CSRF, draft privacy, repeat import and
+cross-track collision rollback. Synthetic browser verified 48 added, repeat import
+0, selection of both tracks, Lao lesson four-type grading at 100%, Korean legacy
+question ID retention after save/reload, and 320/390px previews without horizontal
+overflow. Screenshots curriculum-lao-preview.png and curriculum-korean-preview.png
+are local/source-excluded. No real microphone, paid provider or independent
+language review was used.
+
+This is a substantive foundation curriculum, not a complete intermediate/advanced
+or full TOPIK program. Reviewed audio and owner corrections remain pending. User
+review is explicitly requested after authoring; the earlier request to supply all
+curriculum externally is superseded for these authored drafts. Source and local
+runtime contain this work; staging remains the verified 149-test d4f0b9f release
+until separately synchronized/deployed. Direct account sign-in/signup updates
+remain local too. Other content/operator/production gates below remain open.
+
+## Latest local update — direct bilingual username registration (2026-10-17)
+
+The signed-out /account page now includes an expandable Lao/Korean signup form
+with name, username, password confirmation and an explicit administrator-approval
+notice. Successful signup clears registration secrets and prefills only the login
+username; it never signs a pending user in. The existing /api/register endpoint
+still creates student/pending accounts regardless of supplied role/status fields.
+It now rejects malformed JSON shapes and names over 100 characters; username and
+password bounds remain server-enforced. Registration/duplicate/approval messages
+include Korean. Login rejects non-object payloads cleanly. Existing legacy signup,
+email verification requirements and all role/access checks remain intact.
+
+152 isolated tests and full extracted-release verification pass. Synthetic UI
+tests cover mismatched confirmation without a request, duplicate failure/retry,
+password clearing and pending feedback. Isolated backend tests prove hashing,
+CSRF, pending login denial, ignored role/status escalation, duplicate handling,
+invalid payload rejection and student-only access after explicit fixture approval.
+Browser inspection checked expanded labels and 320px width with no console errors;
+no account was created through the browser and no new credential was entered.
+Screenshot docs/account-registration-mobile.png was visually checked (local only).
+This signup update and the preceding direct account sign-in remain local;
+staging still runs d4f0b9f (149 tests). Real-device signup and full interface
+localization remain acceptance work, alongside curriculum/provider/production gates.
+
+## Latest local update — direct bilingual account sign-in (2026-10-17)
+
+/account now provides its own Lao/Korean username/password form for signed-out
+visitors instead of requiring a detour through the legacy learning page. It uses
+the existing CSRF-protected, approval/rate-limited login endpoint. Successful
+sign-in loads the existing profile and staff-only management link. Logout clears
+profile and password fields; password change/recovery returns to /account.
+Recovery links keep the separate reset view and remove the token from browser
+history. Korean labels were added to both current/new password fields. Legacy
+username registration remains linked at /learn; Google/SMTP settings are unchanged.
+
+150 isolated tests and full extracted-release verification pass. The synthetic
+UI harness covers all four staff/student roles, wrong/pending login, whitespace
+preservation in passwords, CSRF, logout field clearing and reset-view isolation.
+Browser QA used a disposable synthetic account: wrong-password bilingual feedback,
+successful sign-in, reload preserving the session and logout. At 320px document
+width equals viewport width with no console errors. Screenshot visually checked:
+docs/account-signin-mobile.png (local/source-excluded). No real credentials were
+read, reset or changed. This update is local only; the deployed release remains
+149 tests at d4f0b9f. Physical-device and complete localization acceptance remain
+open along with the external/content gates below.
+
+## Latest verified staging deployment — 2026-10-17
+
+After explicit user approval of this release and disposable data reset, Render
+Free deployment dep-db9de6vavr4c73dlablg succeeded: Deploy succeeded | Live,
+1m00s, started 09:02:03 GMT+7. Source is GitHub
+d4f0b9f3ba86e412f69d4ffff2893ec826653462, exact tested local
+2477ffbf5ea6134948ba2328646506450057c864 tree
+f1f269ed0e88a9b4ff4069f321ad16963f10d450. The exact commit was selected manually.
+Logs show starter content count 3, Gunicorn startup, repeated /health 200 and
+anonymous HEAD/root 401. Screenshot docs/render-149-live.png was visually checked
+(local/source-excluded). Free plan, production/main/domain, provider flags and
+actual account roles remain unchanged.
+
+All application source through the 149-test build is now deployed, including
+interactive staff quiz preview, module rename and saved-draft status/mobile rows.
+Earlier local-only/pending labels below describe their original QA milestones,
+not the current deployment state. Source synchronization and deployment-status
+edits after local 2477ffb remain local documentation only. Authenticated use of
+the new features and actual phone/touch/audio acceptance remain pending; server
+health and synthetic tests do not prove these gates. No full production-readiness
+claim is made. Curriculum, actual owner, providers and durable data/cutover remain
+open as documented in PENDING_SETUP.md.
+
+## 149-test source synchronization record (subsequently deployed) — 2026-10-17
+
+Source-only synchronization completed: GitHub
+d4f0b9f3ba86e412f69d4ffff2893ec826653462 on
+codex/staging-review-20261015. Its tree
+f1f269ed0e88a9b4ff4069f321ad16963f10d450 exactly matches tested local
+2477ffbf5ea6134948ba2328646506450057c864; tree creation response and subsequent
+branch-head readback were verified. Includes interactive staff quiz preview,
+atomic draft module rename, explicit saved-draft change status/filter and readable
+320px lesson rows. No runtime accounts, credentials, databases, uploads, receipts
+or backups were uploaded. Original Desktop folders remain untouched.
+
+Render Settings was rechecked after synchronization: Auto-Deploy Off, Free plan,
+last successful source still df308fd and deployment dep-db99foc9v7es739il5p0 Live.
+At synchronization time deployment awaited reset confirmation; the user subsequently authorized it and the latest deployment above completed.
+Production/main/domain/provider flags and actual roles were not changed. This
+synchronization status section is local documentation added after source upload.
+
 ## Latest local update — draft review status and mobile rows (2026-10-17)
 
 Staff lesson lists now distinguish a published lesson with a different saved
@@ -72,7 +199,7 @@ production/domain and payments were not changed.
 
 ## Requirement audit
 
-See REQUIREMENTS_AUDIT.md for the original-plan comparison. The 149-test local build is not the complete vision: Super Admin activation,
+See REQUIREMENTS_AUDIT.md for the original-plan comparison. The 155-test local build is not the complete vision: Super Admin activation,
 full language-navigation acceptance and external/content gates
 remain unverified. See SYSTEM_OWNER.md for the implemented role separation.
 
@@ -100,7 +227,7 @@ remain unverified. See SYSTEM_OWNER.md for the implemented role separation.
 
 ## Validation
 
-- 149 isolated unit/integration tests pass (Flask, storage, grading, access,
+- 155 isolated unit/integration tests pass (Flask, storage, grading, access,
   deadline, recovery, payments, upload visibility, import, providers with mocked
   HTTP responses, restore validation and traversal rejection).
 - Browser QA used a separate server with a synthetic administrator and synthetic

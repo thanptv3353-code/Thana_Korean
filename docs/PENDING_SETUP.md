@@ -1,11 +1,14 @@
 # Remaining acceptance and external setup — 2026-10-16
 
-Current staging: GitHub df308fd, exact local 908be7a, 141-test release, Render
-Free deployment dep-db99foc9v7es739il5p0 verified Live on 2026-10-17 after explicit
-user approval of disposable reset. Speaking fixes and the draft-only Lao pack
-import are included. No six-draft auto-import/publication occurs. User confirmed
-access worked before this deploy; fresh feature/device acceptance is pending.
-Subsequent interactive staff quiz rehearsal passes 144 tests locally and is not deployed. FINAL_DELIVERY.md is authoritative; later documentation changes are local only.
+Current staging: GitHub d4f0b9f, exact local 2477ffb tree
+f1f269ed0e88a9b4ff4069f321ad16963f10d450, 149-test release. Render Free
+deployment dep-db9de6vavr4c73dlablg verified Live (1m00s, 09:02:03 GMT+7,
+2026-10-17), with repeated /health 200 and reviewer gate 401 after explicit
+user reset approval. Includes quiz preview, module rename and draft status/mobile
+rows. Startup still imports only three public Lao starters; six practice drafts
+require explicit staff import and review. User confirmed prior mobile access;
+acceptance of the newest authenticated workflows remains pending. Later status
+edits are local documentation. FINAL_DELIVERY.md is authoritative.
 
 ## Next acceptance, in order
 
@@ -13,7 +16,7 @@ Subsequent interactive staff quiz rehearsal passes 144 tests locally and is not 
 |---|---|---|
 | Latest staging learner/admin use | Render health 200, reviewer 401; isolated browser workflows pass | User opens staging in their working Chrome/mobile browser, signs in, opens Korean and Lao lessons and Admin, and reports exact failing step or success. User reports access works; full lesson/admin-path acceptance is not inferred from that short response. |
 | Microphone and audio | Synthetic recorder/navigation/hidden-page tests pass; no real microphone used | On actual Android/iPhone, listen, grant microphone permission personally, record/stop/play back, leave speaking and confirm capture stops. The new navigation/hidden-page fixes are deployed and need actual device evaluation. |
-| Curriculum and recordings | Original lessons/EPS retained; three public Lao starters, six starter words and six new local unpublished practice drafts | A competent teacher reviews answers/translations/objectives/audio and supplies/approves the additional Lao/Korean/TOPIK curriculum. Use content-readiness and question review tools. Do not label generated content as teacher-approved. |
+| Curriculum and recordings | Original material retained; the agent authored and locally imported 48 foundation drafts (24 per direction), with 206 exercises and full review manuscript | The user will review and request corrections as instructed. Add reviewed audio before claiming listening coverage. Intermediate/advanced/full TOPIK expansion remains additional authoring; these drafts are not presented as independently reviewed. |
 | Actual Super Admin | Four roles and protected controls tested with synthetic accounts | Operator explicitly chooses the intended owner and follows SYSTEM_OWNER.md. No actual account is promoted automatically. |
 | Durable production and migration | Free staging is disposable; isolated restore rehearsed | Obtain actual production backup privately, reconcile data, rehearse migration/restore on durable storage and obtain cutover approval. Do not put backup/accounts in Git or chat. |
 

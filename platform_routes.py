@@ -166,6 +166,8 @@ def install(app, legacy):
     install_courses(app, legacy, db, owner)
     from module_routes import install_modules
     install_modules(app, legacy, db, owner)
+    from curriculum_routes import install_curriculum
+    install_curriculum(app, legacy, db, owner)
     from mock_routes import install_mock
     install_mock(app, legacy, db, owner, questions)
     from vocabulary_routes import install_vocabulary

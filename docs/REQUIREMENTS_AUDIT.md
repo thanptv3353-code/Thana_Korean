@@ -5,21 +5,22 @@ execution instructions), subsequent directions to extend the existing app and
 use Render Free first, and AGENTS.md. This audit preserves the full objective.
 It does not redefine the goal as the features that happen to pass tests.
 
-Current deployed application release: local 908be7a, 141 isolated tests, fresh
-bootstrap, two seeds, SQLite integrity, HTTP smoke and JS checks. GitHub df308fd
-has matching tree 715a779e33d29975e90476f5963da3cd93226f39. Render deployment
-dep-db99foc9v7es739il5p0 is Live on Free with /health 200 and reviewer gate 401.
-User approved disposable reset and previously confirmed access works. New release
-feature/device acceptance remains open. The six Lao drafts require explicit Admin
-import and teacher review; none are published automatically. Later documentation
-updates are local until the next synchronization.
+Current deployed application release: local 2477ffb, 149 isolated tests, clean
+extracted source, bootstrap, two seeds, SQLite integrity, HTTP and JS checks.
+GitHub d4f0b9f has exact tree f1f269ed0e88a9b4ff4069f321ad16963f10d450.
+Render deployment dep-db9de6vavr4c73dlablg succeeded Live on Free (1m00s,
+2026-10-17 09:02:03 GMT+7); logs show /health 200 and reviewer gate 401. User
+explicitly approved this disposable reset. Quiz preview, module rename and draft
+status/mobile rows are deployed. Latest authenticated feature/device acceptance
+remains open. Six Lao drafts require explicit import and teacher review; none
+publish automatically. Later status edits remain local documentation only.
 
 ## Concrete coverage and open requirements
 
 | Original requirement | Inspected evidence | Assessment / remaining proof |
 |---|---|---|
 | Keep name, domain and existing material | templates/index.html; course_routes.py; LOCAL_CONTENT_INVENTORY.md; direct read-only byte comparisons on 2026-10-16 | Brand retained. Original Desktop lessons.json/users.json/progress.json equal local preserved migration inputs byte-for-byte. This does not prove parity with production data. Domain unchanged. |
-| Both Korean-for-Lao and Lao-for-Korean | language/instruction fields; starter seeding; courses and public dictionary | Local structure exists; three public Lao starter lessons and six starter words, plus six new local unpublished practice drafts (18 quizzes, 141 tests; see LAO_DRAFT_PACK.md). Full reviewed curriculum/TOPIK content not complete. |
+| Both Korean-for-Lao and Lao-for-Korean | language/instruction fields; starter seeding; courses and public dictionary | Local structure exists; three public Lao starter lessons and six starter words, plus six new local unpublished practice drafts (18 quizzes, 141 tests; see LAO_DRAFT_PACK.md). Two additional complete foundation draft tracks now exist locally: 24 Korean-for-Lao and 24 Lao-for-Korean lessons, 206 exercises, 14 selected legacy questions with IDs preserved, explicit import and local runtime populated (155 tests; CURRICULUM_REVIEW.md). Owner review/audio and intermediate/advanced/full TOPIK expansion remain pending. |
 | Clear home and language navigation | templates/index.html; static/hub.js; shared learner nav | Home study-language selection is separate from interface language and persists through catalog/shared navigation; Lao paths avoid Korean EPS tabs. Synthetic cross-page routing and 320px home checked, 133 tests. Full interface localization across every page remains unverified. |
 | Prominent home continue-from-previous action | continueLegacy in templates/index.html; course catalog continue buttons | Owner-only unified home resume/next/review now uses approved-account visits/completions across structured and legacy lessons with current access checks (118 tests); synthetic browser workflow verified; included in staging a5ec247. Actual learner acceptance remains pending. |
 | Language → course → module → lesson | courses table; JSON module/order; scoped editor | Existing module names now form collapsible learner sections with completion totals and lesson context. Consecutive grouping preserves published order/access; 134 tests and synthetic browser evidence. Existing course title/description editing now has scoped optimistic updates (137 tests; synthetic save/reload accepted). Existing draft groups now have atomic bulk renaming with exact membership/revision checks and history (147-test local build; synthetic two-lesson rename/reload verified). Independent module records, empty modules and descriptions remain unimplemented. |
@@ -35,7 +36,7 @@ updates are local until the next synchronization.
 | Admin exam count/time/scoring | mock settings and snapshotted category points | Local verified; official exam conformance is not claimed. |
 | Dashboard counts and weekly activity | management_routes.py and management JS/tests | Uses local database counts. No production reporting acceptance or load evaluation. |
 | Student/Teacher/Admin/Super Admin; server-side access | account_routes.py; content/admin decorators; teacher scopes and tests | Four roles now implemented (128 tests). Initial owner activation is explicit; existing Admin powers remain until activation, then system controls are Super Admin-only. Synthetic browser verified both roles. Actual owner activation and role acceptance pending. Shared dictionaries/EPS/media/bank remain trusted-staff scope. |
-| Email registration and Google sign-in | email_routes.py/email_delivery.py; oauth_routes.py; mocked tests | Adapters exist, disabled/unconfigured externally. No real SMTP/Google acceptance; scheduled worker not provisioned. Self-service email recovery was not an explicit original requirement but remains an optional unimplemented follow-up. |
+| Email registration and Google sign-in | email_routes.py/email_delivery.py; oauth_routes.py; mocked tests | Adapters exist, disabled/unconfigured externally. Direct bilingual /account sign-in/logout and username registration now exist in the 152-test local build. Synthetic browser login/reload/logout and registration form layout were checked at 320px; isolated tests cover registration, hashing, approval and escalation rejection. No real SMTP/Google acceptance; scheduled worker not provisioned. Self-service email recovery was not an explicit original requirement but remains an optional unimplemented follow-up. |
 | Try first lesson before registering | public sample; public structured lesson route; legacy login-protected route | Structured free first lessons remain publicly viewable. /try-lesson now serves the full first legacy Korean lesson with server grading and no saved progress; 132 tests and guest browser accepted the first-lesson flow. Actual curriculum quality remains teacher-reviewed content work. |
 | XP/level/streak/progress | learning-progress; my-learning; existing test/browser evidence | Local owner-scoped completion behavior verified; no claim of learner proficiency. |
 | Premium plans/receipts/status/history | membership_routes.py and tests | Manual workflow exists. Automated billing is explicitly future in the plan, consistent with Free-first; no live banking action performed. |
