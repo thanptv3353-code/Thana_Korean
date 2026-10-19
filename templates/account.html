@@ -11,6 +11,14 @@
   <label>ລະຫັດຜ່ານ / 비밀번호<input id="loginPassword" type="password" autocomplete="current-password" required maxlength="128"></label>
   <button id="signInButton" type="submit" class="primary">ເຂົ້າລະບົບ / 로그인</button>
  </form>
+ <details id="legacySignIn" hidden><summary>ໃຊ້ບັນຊີເວັບເກົ່າ / 기존 웹사이트 계정</summary>
+  <p>ໃຊ້ຊື່ ແລະລະຫັດເດີມ. ລະຫັດຈະຖືກສົ່ງໄປ Google Firebase ເພື່ອຢືນຢັນບັນຊີ. / 기존 아이디와 비밀번호를 사용하세요. 비밀번호는 계정 확인을 위해 Google Firebase로 전송됩니다.</p>
+  <form id="legacySignInForm">
+   <label>ຊື່ຜູ້ໃຊ້ເດີມ / 기존 아이디<input id="legacyUsername" autocomplete="username" required autocapitalize="none" spellcheck="false" maxlength="100"></label>
+   <label>ລະຫັດຜ່ານເດີມ / 기존 비밀번호<input id="legacyPassword" type="password" autocomplete="current-password" required maxlength="128"></label>
+   <button id="legacySignInButton" type="submit">ເຂົ້າດ້ວຍບັນຊີເກົ່າ / 기존 계정으로 로그인</button>
+  </form><p id="legacySignInStatus" role="status"></p>
+ </details>
  <details id="registration"><summary>ສະໝັກດ້ວຍຊື່ຜູ້ໃຊ້ / 사용자 이름으로 가입</summary>
   <p>ບັນຊີໃໝ່ຕ້ອງລໍຖ້າແອັດມິນອະນຸມັດກ່ອນເຂົ້າຮຽນ / 새 계정은 관리자 승인 후 로그인할 수 있습니다.</p>
   <form id="registerForm">
@@ -34,4 +42,4 @@
 </article>
 <article id="recovery" hidden><h2>ຕັ້ງລະຫັດໃໝ່ / 비밀번호 재설정</h2><label>ລະຫັດໃໝ່ / 새 비밀번호 (8–128)<input id="resetPassword" type="password" autocomplete="new-password"></label><button id="reset">ບັນທຶກ / 저장</button></article>
 <p id="message" role="status"></p><p>ຖ້າລືມລະຫັດ ໃຫ້ຕິດຕໍ່ແອັດມິນເພື່ອຮັບລິ້ງກູ້ຄືນ. / 비밀번호를 잊었다면 관리자에게 복구 링크를 요청하세요.</p>
-</main><script src="/static/account.js"></script>{% include 'learner-nav.html' %}</body></html>
+</main><script src="/static/firebase-login.js"></script><script src="/static/account.js"></script>{% include 'learner-nav.html' %}</body></html>

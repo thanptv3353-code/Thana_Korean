@@ -1,26 +1,29 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../static/account.js'),'utf8');
-async function fixture({role='student',hash=''}={}){
- const ids=['message','profile','signIn','staffLink','username','name','current','password','language','recovery','signInForm','signInButton','loginUsername','loginPassword','logout','save','change','reset','resetPassword','registration','registerForm','registerName','registerUsername','registerPassword','registerConfirm','registerButton','registerStatus'];
+async function fixture({role='student',hash='',legacyEnabled=false}={}){
+ const ids=['legacySignIn','legacyPassword','legacySignInStatus','legacySignInButton','legacySignInForm','legacyUsername','message','profile','signIn','staffLink','username','name','current','password','language','recovery','signInForm','signInButton','loginUsername','loginPassword','logout','save','change','reset','resetPassword','registration','registerForm','registerName','registerUsername','registerPassword','registerConfirm','registerButton','registerStatus'];
  const elements=Object.fromEntries(ids.map(id=>[id,{hidden:true,value:'',textContent:'',disabled:false}]));
  let signed=false,mode='valid';const calls=[],history=[];
  const fetch=async(url,options={})=>{
   calls.push(url);let status=200,data={};
   if(options.method==='POST')assert.equal(options.headers['X-CSRF-Token'],'synthetic-csrf');
   if(url==='/api/csrf')data={token:'synthetic-csrf'};
+  else if(url==='/api/platform/auth/firebase/config')data={enabled:legacyEnabled};
   else if(url==='/api/platform/account') {if(signed)data={username:'synthetic',name:'Synthetic learner',role,language:'ko'};else{status=401;data={error:'Login required'};}}
   else if(url==='/api/login'){
    const body=JSON.parse(options.body);assert.equal(body.password,' synthetic existing password ');
    if(mode==='valid'){signed=true;data={ok:true};}else{status=mode==='pending'?403:401;data={error:mode==='pending'?'Pending approval':'Wrong password'};}
   }else if(url==='/api/register'){const body=JSON.parse(options.body);assert.equal(body.password,'synthetic registration password');if(mode==='duplicate'){status=400;data={error:'Duplicate synthetic username'};}else data={ok:true};
-  }else if(url==='/api/logout'){signed=false;data={ok:true};}
+  }else if(url==='/api/platform/auth/firebase'){signed=true;data={ok:true};}
+  else if(url==='/api/logout'){signed=false;data={ok:true};}
   else throw Error('Unexpected route '+url);
   return {ok:status<400,status,json:async()=>data};
  };
- const context={document:{getElementById:id=>elements[id]},fetch,URLSearchParams,location:{hash},history:{replaceState:(...args)=>history.push(args)},localStorage:{setItem(){}}};
+ const events={};
+ const context={ThanaFirebaseLogin:{async signIn(config,username,password,exchange){assert(config.enabled);assert.equal(password,'legacy synthetic password');if(mode==='wrong')throw Error('Generic legacy failure');await exchange({id_token:'synthetic-token'});}},window:{addEventListener(name,handler){events[name]=handler;}},document:{getElementById:id=>elements[id]},fetch,URLSearchParams,location:{hash,protocol:'https:'},history:{replaceState:(...args)=>history.push(args)},localStorage:{setItem(){}}};
  vm.runInNewContext(source,context);for(let i=0;i<4;i++)await new Promise(setImmediate);
- return {elements,calls,history,setMode:value=>mode=value};
+ return {elements,calls,history,events,setMode:value=>mode=value};
 }
 (async()=>{
  for(const role of ['student','teacher','admin','superadmin']){
@@ -51,5 +54,12 @@ async function fixture({role='student',hash=''}={}){
  const recovery=await fixture({hash:'#reset=synthetic-one-use-token'});
  assert.equal(recovery.elements.recovery.hidden,false);assert.equal(recovery.elements.signIn.hidden,true);
  assert.deepEqual(recovery.calls,[]);assert.equal(recovery.history[0][2],'/account');
+ const legacy=await fixture({legacyEnabled:true}),le=legacy.elements;
+ assert.equal(le.legacySignIn.hidden,false);le.legacyUsername.value='old_learner';le.legacyPassword.value='legacy synthetic password';
+ await le.legacySignInForm.onsubmit({preventDefault(){}});
+ assert.equal(le.profile.hidden,false);assert.equal(le.legacyPassword.value,'');assert.equal(le.legacySignInButton.disabled,false);
+ const failedLegacy=await fixture({legacyEnabled:true}),fl=failedLegacy.elements;failedLegacy.setMode('wrong');fl.legacyPassword.value='legacy synthetic password';
+ await fl.legacySignInForm.onsubmit({preventDefault(){}});assert.equal(fl.legacyPassword.value,'');assert.equal(fl.legacySignInStatus.textContent,'Generic legacy failure');assert.equal(fl.signInButton.disabled,false);
+ fl.legacyPassword.value='unsaved';failedLegacy.events.pagehide();assert.equal(fl.legacyPassword.value,'');
  console.log('Account sign-in/profile/logout, current staff roles, failure recovery and reset isolation passed (synthetic only)');
 })().catch(error=>{console.error(error);process.exitCode=1;});

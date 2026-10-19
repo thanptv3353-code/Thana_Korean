@@ -15,7 +15,7 @@ function clearRegistration(){
 function showSignIn(){
  $('profile').hidden=true;$('signIn').hidden=false;$('staffLink').hidden=true;
  $('username').textContent='';$('name').value='';$('current').value='';$('password').value='';
- clearRegistration();
+ clearRegistration();$('legacyPassword').value='';$('legacySignInStatus').textContent='';$('legacySignIn').open=false;
 }
 async function loadProfile(){
  try{
@@ -32,18 +32,18 @@ let resetToken=new URLSearchParams(location.hash.slice(1)).get('reset');
 if(resetToken){$('recovery').hidden=false;history.replaceState(null,'','/account');}
 else loadProfile().catch(msg);
 $('signInForm').onsubmit=async event=>{
- event.preventDefault();$('signInButton').disabled=true;$('registerButton').disabled=true;msg('ກຳລັງເຂົ້າລະບົບ… / 로그인 중…');
+ event.preventDefault();$('signInButton').disabled=true;$('registerButton').disabled=true;$('legacySignInButton').disabled=true;msg('ກຳລັງເຂົ້າລະບົບ… / 로그인 중…');
  try{
   await api('/api/login',{username:$('loginUsername').value,password:$('loginPassword').value});
   $('loginPassword').value='';await loadProfile();
   msg($('profile').hidden?'ກະລຸນາເຂົ້າລະບົບອີກຄັ້ງ / 다시 로그인하세요':'✓ ເຂົ້າລະບົບແລ້ວ / 로그인 완료');
  }catch(e){msg(e.status===401?'ຊື່ຜູ້ໃຊ້ ຫຼືລະຫັດບໍ່ຖືກຕ້ອງ / 사용자 이름 또는 비밀번호가 올바르지 않습니다':e);}
- finally{$('signInButton').disabled=false;$('registerButton').disabled=false;}
+ finally{$('signInButton').disabled=false;$('registerButton').disabled=false;$('legacySignInButton').disabled=false;}
 };
 $('registerForm').onsubmit=async event=>{
  event.preventDefault();
  if($('registerPassword').value!==$('registerConfirm').value){$('registerStatus').textContent='ລະຫັດບໍ່ກົງກັນ / 비밀번호가 일치하지 않습니다';return;}
- $('registerButton').disabled=true;$('signInButton').disabled=true;
+ $('registerButton').disabled=true;$('signInButton').disabled=true;$('legacySignInButton').disabled=true;
  $('registerStatus').textContent='ກຳລັງສະໝັກ… / 가입 중…';
  try{
   const username=$('registerUsername').value;
@@ -51,7 +51,7 @@ $('registerForm').onsubmit=async event=>{
   clearRegistration();$('loginUsername').value=username.trim().toLowerCase();
   msg('✓ ສະໝັກແລ້ວ. ລໍຖ້າແອັດມິນອະນຸມັດກ່ອນເຂົ້າລະບົບ / 가입 완료. 관리자 승인 후 로그인하세요');
  }catch(e){$('registerStatus').textContent=e.message||e;}
- finally{$('registerButton').disabled=false;$('signInButton').disabled=false;}
+ finally{$('registerButton').disabled=false;$('signInButton').disabled=false;$('legacySignInButton').disabled=false;}
 };
 $('logout').onclick=async()=>{
  $('logout').disabled=true;
@@ -61,3 +61,20 @@ $('logout').onclick=async()=>{
 $('save').onclick=async()=>{try{await api('/api/platform/account',{name:$('name').value,language:$('language').value});localStorage.setItem('thana-language',$('language').value);msg('✓ ບັນທຶກແລ້ວ / 저장 완료');}catch(e){msg(e);}};
 $('change').onclick=async()=>{try{await api('/api/platform/account/password',{current:$('current').value,password:$('password').value});location.href='/account';}catch(e){msg(e);}};
 $('reset').onclick=async()=>{try{await api('/api/platform/account/recover',{token:resetToken,password:$('resetPassword').value});resetToken=null;location.href='/account';}catch(e){msg(e);}};
+
+let firebaseLoginConfig=null;
+if(!resetToken)api('/api/platform/auth/firebase/config').then(config=>{
+ firebaseLoginConfig=config;$('legacySignIn').hidden=!config.enabled;
+}).catch(()=>{$('legacySignIn').hidden=true;});
+$('legacySignInForm').onsubmit=async event=>{
+ event.preventDefault();$('legacySignInButton').disabled=true;$('signInButton').disabled=true;$('registerButton').disabled=true;
+ $('legacySignInStatus').textContent='ກຳລັງເຂົ້າລະບົບ… / 로그인 중…';
+ try{
+  if(location.protocol!=='https:')throw Error('ກະລຸນາໃຊ້ HTTPS / HTTPS로 접속하세요');
+  await ThanaFirebaseLogin.signIn(firebaseLoginConfig,$('legacyUsername').value,$('legacyPassword').value,body=>api('/api/platform/auth/firebase',body));
+  await loadProfile();$('legacySignInStatus').textContent='';$('legacySignIn').open=false;
+  msg($('profile').hidden?'ກະລຸນາເຂົ້າລະບົບອີກຄັ້ງ / 다시 로그인하세요':'✓ ເຂົ້າລະບົບແລ້ວ / 로그인 완료');
+ }catch(error){$('legacySignInStatus').textContent=error.message;}
+ finally{$('legacyPassword').value='';$('legacySignInButton').disabled=false;$('signInButton').disabled=false;$('registerButton').disabled=false;}
+};
+window.addEventListener('pagehide',()=>{$('legacyPassword').value='';});

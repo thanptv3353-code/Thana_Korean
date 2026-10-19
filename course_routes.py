@@ -63,6 +63,9 @@ def install_courses(app, legacy, db, owner):
         if mode!='inherit':return mode=='premium'
         return bool(c.execute('SELECT 1 FROM premium_courses WHERE course=?',(course,)).fetchone())
 
+    from firebase_learning_migration import initialize as initialize_firebase_learning,course_entitled
+    with db() as c:initialize_firebase_learning(c)
+
     def accessible(c,lid):
         row=c.execute('SELECT course FROM course_lessons WHERE id=?',(lid,)).fetchone()
         if not row:return True
@@ -70,7 +73,7 @@ def install_courses(app, legacy, db, owner):
         if may_manage(c,u,row['course']):return True
         restricted=premium_lesson(c,lid,row['course'])
         entitlement=c.execute('SELECT expires FROM entitlements WHERE owner=?',(owner(),)).fetchone()
-        if restricted and not (entitlement and entitlement['expires']>time.time()):return False
+        if restricted and not ((entitlement and entitlement['expires']>time.time()) or course_entitled(c,owner(),row['course'])):return False
         rule=c.execute('SELECT sequential FROM course_rules WHERE course=?',(row['course'],)).fetchone()
         if rule and rule['sequential']:
             records=c.execute('SELECT id,published FROM course_lessons WHERE course=? AND published IS NOT NULL',(row['course'],)).fetchall()

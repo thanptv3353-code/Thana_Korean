@@ -1,0 +1,2 @@
+# Optional legacy sign-in bridge; disabled until explicitly configured.
+firebase-admin

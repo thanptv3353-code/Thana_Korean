@@ -129,3 +129,52 @@ Loading a prompt does not send it to Azure; it clears consent and asks before
 replacing existing text. These prompts do not track later live lesson edits.
 Letter lessons require special review of letter names versus actual sounds.
 This helper is locally verified (157 tests), not yet deployed; no audio was generated.
+
+
+## Firebase identity continuity — implemented bridge, disabled
+
+The actual legacy site uses Firebase Auth project korean-lao-exam. Install the
+optional requirements-firebase.txt only on a deliberately configured server and
+set THANA_FIREBASE_AUTH_ENABLED=1 only after credential, UID binding and frontend
+acceptance checks. Official Admin SDK application initialization fixes projectId
+to korean-lao-exam. Emulator credentials are rejected. Cloud Shell's read-only
+permission is not a server credential and no such credential was provisioned.
+
+POST /api/platform/auth/firebase accepts only id_token over HTTPS with the normal
+session-bound CSRF header. It verifies the client SDK token with check_revoked=True,
+requires authentication in the last five minutes, looks up an explicitly enabled
+firebase_account_bindings UID and requires an approved existing local account.
+It never auto-provisions or links by email/username, nor trusts token role claims.
+An IP-based SQLite rate limit allows ten attempts per ten minutes. Failures do
+not expose UID/binding/credential details or tokens in logs.
+
+An official Firebase five-minute session cookie is set Secure, HttpOnly,
+SameSite=Strict with __Host- prefix. Each subsequent Firebase-authenticated request
+verifies it with revocation checks and rechecks the enabled binding, current local
+status, auth_version and local role. Disabled bridge, revoked/expired cookie,
+changed binding or password version clears the app session. Logout clears both
+cookies. No raw ID token or password is stored in Flask session or source.
+Existing local-login routes remain available. The new table starts empty; no
+real binding, account or entitlement was created. Frontend legacy username login is implemented but remains hidden unless both
+the bridge flag and a valid public THANA_FIREBASE_WEB_API_KEY are configured.
+Actual credential/device verification remains pending. Tests mock SDK boundaries;
+no real Google API call is made by release tests.
+
+Reference: https://firebase.google.com/docs/auth/admin/verify-id-tokens
+Reference: https://firebase.google.com/docs/auth/admin/manage-cookies
+
+
+The account page offers a separate legacy-username form when enabled. It uses
+only the original public thana_usernames document lookup on the fixed Firebase
+project to obtain authEmail, then sends the password directly to the official
+Google Identity Toolkit signInWithPassword endpoint. Only the returned ID token
+goes to the same-origin bridge with CSRF. It does not copy/publish username maps,
+query other collections, register users, refresh tokens or persist Firebase
+credentials in browser storage. Redirects are rejected, Google requests omit
+cookies and referrers, errors are generic, and password inputs clear on success,
+failure and pagehide. Local/new registration flows are independently retained.
+The existing public username-map read rules and Web API key restrictions must be
+verified before enablement. Do not broaden Firestore rules to make this work.
+No actual key, server credential, binding or live Google request was configured.
+
+Reference: https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password

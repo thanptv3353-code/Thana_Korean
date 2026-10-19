@@ -175,6 +175,9 @@ def install(app, legacy):
     from review_routes import install_review
     install_review(app, legacy, db, owner)
 
+    from firebase_auth_routes import install_firebase_auth
+    install_firebase_auth(app,legacy,db)
+
     from account_routes import install_accounts
     install_accounts(app, legacy, db, owner)
     from membership_routes import install_membership
@@ -222,3 +225,9 @@ def install(app, legacy):
 
     from trial_routes import install_trial
     install_trial(app,legacy)
+
+    from firebase_eps_routes import install_firebase_eps
+    install_firebase_eps(app,legacy,db)
+
+    from firebase_eps_practice_routes import install_firebase_practice
+    install_firebase_practice(app,legacy,db,owner)
