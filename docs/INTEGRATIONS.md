@@ -163,6 +163,20 @@ no real Google API call is made by release tests.
 Reference: https://firebase.google.com/docs/auth/admin/verify-id-tokens
 Reference: https://firebase.google.com/docs/auth/admin/manage-cookies
 
+Production startup now accepts a passwordless Firebase-only administrator only
+when the account is approved, the bridge is explicitly enabled, the existing
+platform database contains its exact enabled UID binding, and the fixed-project
+Admin SDK can retrieve that UID as a non-disabled Firebase user. Missing SDK,
+credentials, permissions, binding or provider availability fails startup with a
+generic error. Emulator configuration is rejected. This lookup is read-only and
+does not prove end-user sign-in; actual device acceptance remains required.
+Local administrator passwords must have a structurally valid modern PBKDF2 hash;
+legacy or malformed password records still block startup. No account, binding,
+password or provider configuration is changed by the check. Tests mock the SDK;
+no real identity lookup was performed during release verification.
+
+Reference: https://firebase.google.com/docs/auth/admin/manage-users#retrieve_user_data
+
 
 The account page offers a separate legacy-username form when enabled. It uses
 only the original public thana_usernames document lookup on the fixed Firebase

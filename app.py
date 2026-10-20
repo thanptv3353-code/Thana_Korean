@@ -98,8 +98,8 @@ progress = _load(PROGRESS_FILE, {})
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
 if os.environ.get('THANA_ENV') == 'production':
-    if any(u.get('role') in ('admin','superadmin') and not str(u.get('pw', '')).startswith('pbkdf2_sha256$') for u in users.values()):
-        raise RuntimeError('Upgrade legacy administrator passwords before production')
+    from admin_auth_preflight import validate_admin_authentication
+    validate_admin_authentication(users, os.environ.get('THANA_PLATFORM_DB', os.path.join(BASE, 'data/platform.sqlite3')), os.environ)
     app.config['SESSION_COOKIE_SECURE'] = True
 from staging_access import install_staging_access
 install_staging_access(app)

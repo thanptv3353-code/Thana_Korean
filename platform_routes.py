@@ -231,3 +231,6 @@ def install(app, legacy):
 
     from firebase_eps_practice_routes import install_firebase_practice
     install_firebase_practice(app,legacy,db,owner)
+
+    from firebase_history_routes import install_original_history
+    install_original_history(app,legacy,db,owner)

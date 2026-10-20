@@ -2,6 +2,8 @@
 import datetime
 import json
 from firebase_reconciliation import reconcile_transfer
+from firebase_missed_words import phrase_index,import_missed_words
+from firebase_curriculum import load_source
 from firebase_eps_practice import initialize as initialize_eps_progress,import_source_progress
 
 COURSE_SCOPES={'firebase-thana-lessons-v1':'general','firebase-thana-seasonal-v1':'seasonal'}
@@ -18,10 +20,11 @@ def course_entitled(connection,username,course):
     return bool(connection.execute('SELECT 1 FROM firebase_scope_entitlements e JOIN firebase_account_bindings b ON b.uid=e.uid WHERE b.username=? AND b.enabled=1 AND e.scope=? AND e.granted=1',(username,scope)).fetchone())
 
 
-def apply_learning(connection,payload):
+def apply_learning(connection,payload,source=None):
     plan=reconcile_transfer(payload);initialize(connection);initialize_eps_progress(connection)
     source_uids={identity['firebase_uid'] for identity in plan['identities']}
-    users={row[0]:row[1] for row in connection.execute('SELECT uid,username FROM firebase_account_bindings')}
+    eligible_uids={identity['firebase_uid'] for identity in plan['identities'] if 'deleted_profile' not in identity['issues']}
+    users={row[0]:row[1] for row in connection.execute('SELECT uid,username FROM firebase_account_bindings') if row[0] in eligible_uids}
     for identity in plan['identities']:
         if identity['firebase_uid'] not in users:continue
         if users[identity['firebase_uid']]!=identity['username']:raise ValueError('UID binding username differs from source')
@@ -35,6 +38,7 @@ def apply_learning(connection,payload):
         existing=connection.execute('SELECT source FROM firebase_progress_imports WHERE document=?',(row['document_id'],)).fetchone()
         if existing and json.loads(existing[0])!=row['source']:raise ValueError('Source progress changed; explicit review required')
     scopes=passed=skipped=0;statuses={};eps_added=eps_updated=eps_unknown=0
+    missed_added=missed_unresolved=0;phrases=None
     for identity in plan['identities']:
         if identity['firebase_uid'] not in users:continue
         for scope,state in identity['scopes'].items():
@@ -43,12 +47,19 @@ def apply_learning(connection,payload):
         eps=None
         if row['kind']=='eps' and row['firebase_uid'] in users:
             eps=import_source_progress(connection,users[row['firebase_uid']],row['source']);eps_added+=eps['added'];eps_updated+=eps['updated'];eps_unknown+=eps['unknown']
+        missed=None
+        if row['kind']=='missed_words' and row['firebase_uid'] in users:
+            if phrases is None:phrases=phrase_index(source or load_source())
+            missed=import_missed_words(connection,users[row['firebase_uid']],row['source'],phrases)
+            missed_added+=missed['added'];missed_unresolved+=missed['unresolved']
         if connection.execute('SELECT 1 FROM firebase_progress_imports WHERE document=?',(row['document_id'],)).fetchone():
+            if missed:connection.execute('UPDATE firebase_progress_imports SET status=? WHERE document=?',(missed['status'],row['document_id']))
             if eps:connection.execute('UPDATE firebase_progress_imports SET status=? WHERE document=?',(eps['status'],row['document_id']))
             skipped+=1;continue
         data=row['source'];uid=row['firebase_uid'];status='preserved-source-only'
         if uid not in users:status='inactive-source-owner' if uid in source_uids else 'unresolved-owner'
         elif eps:status=eps['status']
+        elif missed:status=missed['status']
         elif row['kind']=='lesson':
             lesson=connection.execute('SELECT course FROM course_lessons WHERE id=?',(row['lesson_id'],)).fetchone()
             if row['issues']:status='invalid-lesson-history'
@@ -69,4 +80,4 @@ def apply_learning(connection,payload):
                         connection.execute('INSERT INTO course_progress VALUES (?,?,?,?)',(owner,row['lesson_id'],score,completed));passed+=1;status='imported-completion'
         statuses[status]=statuses.get(status,0)+1
         connection.execute('INSERT INTO firebase_progress_imports VALUES (?,?,?,?,?)',(row['document_id'],uid,row['kind'],status,json.dumps(data,ensure_ascii=False)))
-    return dict(eps_question_rows_added=eps_added,eps_flags_updated=eps_updated,eps_unknown_question_refs=eps_unknown,scope_rows_added=scopes,lesson_completions_added=passed,already_recorded=skipped,statuses=statuses)
+    return dict(missed_word_saves_added=missed_added,missed_word_refs_unresolved=missed_unresolved,eps_question_rows_added=eps_added,eps_flags_updated=eps_updated,eps_unknown_question_refs=eps_unknown,scope_rows_added=scopes,lesson_completions_added=passed,already_recorded=skipped,statuses=statuses)

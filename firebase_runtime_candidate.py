@@ -6,6 +6,7 @@ import re
 import sqlite3
 from contextlib import closing
 from firebase_eps_bank import import_bank
+from firebase_result_history import import_results
 from firebase_learning_migration import apply_learning
 from firebase_migration import inspect_transfer
 from firebase_reconciliation import reconcile_transfer
@@ -54,8 +55,9 @@ def build_candidate(payload,destination,source=None):
         for lesson in patched['constants']['DEFAULT_LESSONS']:
             if lesson.get('free') is True:db.execute('INSERT INTO lesson_access VALUES (?,?,1)',(lesson['id'],'free'))
         eps_added=import_bank(db,patched)
-        learning=apply_learning(db,payload)
-        report=dict(status='prepared-not-enabled',profiles=len(users),deleted_profiles_not_activated=plan['summary']['issues'].get('deleted_profile',0),
+        learning=apply_learning(db,payload,patched)
+        original_results=import_results(db,payload)
+        report=dict(original_results=original_results,status='prepared-not-enabled',profiles=len(users),deleted_profiles_not_activated=plan['summary']['issues'].get('deleted_profile',0),
             eps_draft_questions=eps_added,eps_question_progress=learning['eps_question_rows_added'],disabled_uid_bindings=len(identities),source_records=len(records),drafts=added,published=0,
             unresolved_progress_owners=plan['summary']['issues'].get('unknown_owner',0),overrides=overrides,
             active_progress=learning['lesson_completions_added'],scoped_entitlement_rows=learning['scope_rows_added'],learning_import=learning,applied_entitlements=0,

@@ -103,9 +103,62 @@ Unsubmitted choices are not autosaved.
 
 ## Verification and remaining gates
 
-202 isolated tests and clean source/bootstrap/SQLite/HTTP/JS checks passed.
+### Missed-word continuity
+
+Candidate building now maps the original missed-word dictionary by exact phrase
+ID against the public main curriculum with reviewed source overrides applied.
+An unambiguous Korean/Lao pair becomes an unpublished vocabulary draft using its
+original ID and a private saved-word link for the explicitly mapped source owner.
+Original positive integer miss counts remain separate from spaced-review grades,
+due dates and completions. No vocabulary publication or entitlement is granted.
+Staff can review/publish these drafts in the existing Vocabulary Studio, after
+which the owner sees them under saved words and saved-word review.
+
+Unmapped/ambiguous IDs, invalid counts, existing vocabulary collisions and unknown
+or deleted owners remain unresolved/source-only; no text-based identity matching
+or automatic aliasing occurs. Seasonal phrases use a different source namespace
+and are not guessed into the main review deck. The private import journal retains
+the source document. Reimport preserves staff edits, review schedules and learner
+removals; it does not re-save a word already removed after migration. Changing an
+already journaled source document requires explicit review, as with other history.
+
+Existing runtime candidates are not automatically updated by a code deployment.
+Build a separate new private candidate and reconcile its report before selecting
+a target. Real migration results and actual device acceptance remain unverified.
+
+Run `python scripts/check_runtime_readiness.py /path/to/private/runtime` for an
+offline structural check. It reads existing SQLite files without starting the
+app, writes no data, makes no provider calls and omits account identifiers from
+its output. Exit 1 means a structural blocker; exit 0 means only those offline
+checks passed. `production_ready` always remains false: enabled UID rows alone
+cannot establish working Firebase credentials or real sign-in, and this command
+does not bypass the application's production startup checks. Keep its output
+private along with other migration working observations.
+
+The 229-test release check passed, together
+with clean source/bootstrap/SQLite/HTTP/JS checks.
 Browser QA used isolated synthetic accounts/public material at 320px. No real
 provider integration or production readiness is established by these tests.
 Real credentials, actual account/history/payment reconciliation, missing-media
 and language review, durable hosting and device/end-to-end acceptance remain
 required. Private working observations/results are intentionally outside source.
+
+
+## Original seasonal result history
+
+New candidates normalize only thana_seasonal_exam_results belonging to exact
+non-deleted thana_users identities with matching UID/username bindings. Original
+result IDs and group IDs are retained. Integer scores/totals, rounded percentages,
+pass flags and timezone-qualified timestamps must agree with the original seasonal
+exam format. Invalid or unresolved records remain source-only; changed journal
+inputs require explicit review. No score is added to new mock exams, XP, lesson
+completion, entitlements or exam-attempt limits.
+
+The My Learning page reads /api/platform/original-history in pages. The server
+requires an approved current account, matching local Firebase UID and enabled
+original binding for every request; it returns only that owner's summary fields
+with no-store caching. It exposes no raw source, personal names or answer keys.
+This preserves historical claims, not proof of a proctored examination. Legacy
+EPS examResults uses a separate identity namespace and remains unapplied until
+its ownership is explicitly reconciled. Existing candidates/deployments do not
+automatically receive imported results. Browser checks used synthetic data only.
